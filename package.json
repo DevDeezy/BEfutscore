@@ -1,0 +1,16 @@
+{
+    "name": "netlify-backend",
+    "version": "1.0.0",
+    "main": "index.js",
+    "dependencies": {
+      "@prisma/client": "^5.0.0",
+      "bcryptjs": "^2.4.3",
+      "jsonwebtoken": "^9.0.0",
+      "prisma": "^5.0.0"
+    },
+    "scripts": {
+      "build": "npm install && prisma generate",
+      "prisma:generate": "prisma generate",
+      "prisma:migrate": "prisma migrate deploy"
+    }
+  }

@@ -1,0 +1,6 @@
+[build]
+  functions = "netlify/functions"
+  command = "npm run prisma:generate && npm run prisma:migrate"
+
+[functions]
+  node_bundler = "esbuild" 
