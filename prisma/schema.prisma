@@ -13,7 +13,7 @@ model Users {
   password  String
   role      String   @default("user")
   createdAt DateTime @default(now())
-  orders    Order[]
+  orders    Orders[]
 }
 
 model Orders {
@@ -34,7 +34,7 @@ model Orders {
 
 model OrdersItems {
   id          Int    @id @default(autoincrement())
-  order       Order  @relation(fields: [orderId], references: [id])
+  order       Orders  @relation(fields: [orderId], references: [id])
   orderId     Int
   productType String
   imageFront  String
