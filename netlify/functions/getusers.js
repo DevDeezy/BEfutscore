@@ -30,7 +30,7 @@ exports.handler = async (event) => {
         id: true,
         email: true,
         role: true,
-        createdAt: true,
+        created_at: true,
       }
     });
     return {
