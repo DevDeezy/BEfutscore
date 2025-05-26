@@ -1,3 +1,7 @@
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
+const prisma = new PrismaClient();
+
 exports.handler = async (event) => {
   // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
@@ -21,19 +25,36 @@ exports.handler = async (event) => {
       body: 'Method Not Allowed',
     };
   }
-  const data = JSON.parse(event.body);
-  // TODO: Save user to database
-  const user = {
-    _id: Date.now().toString(),
-    email: data.email,
-    role: data.role || 'user',
-    createdAt: new Date().toISOString(),
-  };
-  return {
-    statusCode: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-    },
-    body: JSON.stringify(user),
-  };
+  try {
+    const data = JSON.parse(event.body);
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+    const user = await prisma.user.create({
+      data: {
+        email: data.email,
+        password: hashedPassword,
+        role: data.role || 'user',
+      },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        createdAt: true,
+      }
+    });
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      },
+      body: JSON.stringify(user),
+    };
+  } catch (err) {
+    return {
+      statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      },
+      body: JSON.stringify({ error: err.message }),
+    };
+  }
 }; 
