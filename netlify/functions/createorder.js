@@ -34,7 +34,7 @@ exports.handler = async (event) => {
         address_cidade: address.cidade,
         address_distrito: address.distrito,
         address_pais: address.pais,
-        address_codigoPostal: address.codigoPostal,
+        address_codigo_postal: address.codigoPostal,
         address_telemovel: address.telemovel,
         items: {
           create: items.map((item) => ({
