@@ -3,18 +3,17 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = new PrismaClient();
 
-const headers = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS'
-};
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 exports.handler = async (event) => {
-  // Handle CORS preflight requests
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      },
       body: ''
     };
   }
@@ -22,8 +21,8 @@ exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
-      headers,
-      body: JSON.stringify({ message: 'Method Not Allowed' })
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ error: 'Method Not Allowed' })
     };
   }
 
@@ -33,8 +32,8 @@ exports.handler = async (event) => {
     if (!email || !password) {
       return {
         statusCode: 400,
-        headers,
-        body: JSON.stringify({ message: 'Email and password are required' })
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ error: 'Email and password are required' })
       };
     }
 
@@ -42,8 +41,8 @@ exports.handler = async (event) => {
     if (!user) {
       return {
         statusCode: 401,
-        headers,
-        body: JSON.stringify({ message: 'Invalid credentials' })
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ error: 'Invalid credentials' })
       };
     }
 
@@ -51,24 +50,25 @@ exports.handler = async (event) => {
     if (!isMatch) {
       return {
         statusCode: 401,
-        headers,
-        body: JSON.stringify({ message: 'Invalid credentials' })
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ error: 'Invalid credentials' })
       };
     }
 
     const token = jwt.sign(
-      { id: user.id },
-      process.env.JWT_SECRET,
-      { expiresIn: '30d' }
+      { id: user.id, email: user.email, role: user.role, created_at: user.created_at },
+      JWT_SECRET,
+      { expiresIn: '7d' }
     );
 
     return {
       statusCode: 200,
-      headers,
+      headers: { 'Access-Control-Allow-Origin': '*' },
       body: JSON.stringify({
         id: user.id,
         email: user.email,
         role: user.role,
+        created_at: user.created_at,
         token
       })
     };
@@ -76,8 +76,8 @@ exports.handler = async (event) => {
     console.error('Login error:', error);
     return {
       statusCode: 500,
-      headers,
-      body: JSON.stringify({ message: 'Internal server error' })
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ error: 'Internal server error' })
     };
   }
 };
