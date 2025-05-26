@@ -28,7 +28,7 @@ model Order {
   address_cidade  String
   address_distrito String
   address_pais    String
-  address_codigoPostal String
+  address_codigo_postal String
   address_telemovel String
   created_at       DateTime    @default(now())
   items           OrderItem[]
