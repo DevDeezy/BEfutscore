@@ -12,7 +12,7 @@ model User {
   email     String   @unique
   password  String
   role      String   @default("user")
-  createdAt DateTime @default(now())
+  created_at DateTime @default(now())
   orders    Order[]
   
   @@map("users") // This maps the Prisma model User to the actual table "users"
