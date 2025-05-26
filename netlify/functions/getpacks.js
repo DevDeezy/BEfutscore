@@ -1,7 +1,27 @@
 exports.handler = async (event) => {
-  if (event.httpMethod !== 'GET') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+  // Handle CORS preflight
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      },
+      body: '',
+    };
   }
+
+  if (event.httpMethod !== 'GET') {
+    return {
+      statusCode: 405,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      },
+      body: 'Method Not Allowed',
+    };
+  }
+
   // TODO: Fetch packs from database
   const packs = [
     { _id: '1', name: 'Starter Pack', items: [{ productType: 'tshirt', quantity: 1 }], price: 10 },
@@ -9,6 +29,9 @@ exports.handler = async (event) => {
   ];
   return {
     statusCode: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+    },
     body: JSON.stringify(packs),
   };
 }; 
