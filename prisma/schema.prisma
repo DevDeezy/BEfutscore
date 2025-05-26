@@ -39,14 +39,14 @@ model Order {
 
 model OrderItem {
   id          Int    @id @default(autoincrement())
-  order       Order  @relation(fields: [orderId], references: [id])
-  orderId     Int
-  productType String
-  imageFront  String
-  imageBack   String?
+  order       Order  @relation(fields: [order_id], references: [id])
+  order_id     Int
+  product_type String
+  image_front  String
+  image_back   String?
   size        String
-  playerName  String?
+  player_name  String?
 
-      @@map("ordersitems") // This maps the Prisma model OrderItem to the actual table "ordersitems"
+      @@map("orderitems") // This maps the Prisma model OrderItem to the actual table "ordersitems"
 
 }

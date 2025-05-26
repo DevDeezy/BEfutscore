@@ -38,11 +38,11 @@ exports.handler = async (event) => {
         address_telemovel: address.telemovel,
         items: {
           create: items.map((item) => ({
-            productType: item.productType,
-            imageFront: item.imageFront || '',
-            imageBack: item.imageBack || '',
+            product_type: item.productType,
+            image_front: item.imageFront || '',
+            image_back: item.imageBack || '',
             size: item.size,
-            playerName: item.playerName,
+            player_name: item.playerName,
           }))
         }
       }
