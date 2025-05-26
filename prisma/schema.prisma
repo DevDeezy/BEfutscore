@@ -14,6 +14,8 @@ model Users {
   role      String   @default("user")
   createdAt DateTime @default(now())
   orders    Orders[]
+  
+  @@map("users") // This maps the Prisma model User to the actual table "users"
 }
 
 model Orders {
@@ -30,6 +32,9 @@ model Orders {
   address_telemovel String
   createdAt       DateTime    @default(now())
   items           OrdersItems[]
+
+    @@map("orders") // This maps the Prisma model Orders to the actual table "orders"
+
 }
 
 model OrdersItems {
@@ -41,4 +46,7 @@ model OrdersItems {
   imageBack   String?
   size        String
   playerName  String?
+
+      @@map("ordersitems") // This maps the Prisma model OrdersItems to the actual table "ordersitems"
+
 }
