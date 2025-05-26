@@ -35,8 +35,8 @@ exports.handler = async (event) => {
           updateMany: images.map((img, idx) => ({
             where: { /* you may need to provide a unique identifier for each item */ },
             data: {
-              imageFront: img.imageFront,
-              imageBack: img.imageBack || null,
+              image_front: img.image_front,
+              image_back: img.image_back || null,
             },
           })),
         },
