@@ -18,7 +18,7 @@ model Users {
 
 model Orders {
   id              Int         @id @default(autoincrement())
-  user            User        @relation(fields: [userId], references: [id])
+  user            Users        @relation(fields: [userId], references: [id])
   userId          Int
   status          String      @default("pending")
   address_nome    String
