@@ -27,7 +27,7 @@ exports.handler = async (event) => {
     const { userId, items, address } = JSON.parse(event.body || '{}');
     const order = await prisma.order.create({
       data: {
-        userId: Number(userId),
+        user_id: Number(userId),
         status: 'pending',
         address_nome: address.nome,
         address_morada: address.morada,
