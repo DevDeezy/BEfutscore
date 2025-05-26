@@ -27,6 +27,26 @@ exports.handler = async (event) => {
   }
   try {
     const data = JSON.parse(event.body);
+
+    // Validate input
+    if (!data.email || !data.password) {
+      return {
+        statusCode: 400,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ error: 'Email and password are required.' }),
+      };
+    }
+
+    // Check if user already exists
+    const existing = await prisma.user.findUnique({ where: { email: data.email } });
+    if (existing) {
+      return {
+        statusCode: 409,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ error: 'User already exists.' }),
+      };
+    }
+
     const hashedPassword = await bcrypt.hash(data.password, 10);
     const user = await prisma.user.create({
       data: {
@@ -38,7 +58,7 @@ exports.handler = async (event) => {
         id: true,
         email: true,
         role: true,
-        createdAt: true,
+        created_at: true,
       }
     });
     return {
@@ -49,6 +69,7 @@ exports.handler = async (event) => {
       body: JSON.stringify(user),
     };
   } catch (err) {
+    console.error('Create user error:', err);
     return {
       statusCode: 500,
       headers: {
