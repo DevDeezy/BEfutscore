@@ -12,6 +12,18 @@ function getOrders() {
 }
 
 exports.handler = async function(event, context) {
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      },
+      body: '',
+    };
+  }
+
   try {
     const orders = getOrders();
     const workbook = new ExcelJS.Workbook();
@@ -81,6 +93,9 @@ exports.handler = async function(event, context) {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': 'attachment; filename=orders_with_images.xlsx',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       },
       isBase64Encoded: true,
       body: Buffer.from(buffer).toString('base64'),
@@ -89,6 +104,11 @@ exports.handler = async function(event, context) {
     return {
       statusCode: 500,
       body: 'Error generating Excel: ' + err.message,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      },
     };
   }
 }; 
