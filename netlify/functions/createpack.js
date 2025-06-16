@@ -1,4 +1,5 @@
-const { MongoClient, ObjectId } = require('mongodb');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 exports.handler = async (event) => {
   // Handle CORS preflight
@@ -7,8 +8,6 @@ exports.handler = async (event) => {
       statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       },
       body: '',
     };
@@ -24,9 +23,6 @@ exports.handler = async (event) => {
     };
   }
 
-  const uri = process.env.MONGODB_URI;
-  const client = new MongoClient(uri);
-
   try {
     const pack = JSON.parse(event.body);
     
@@ -41,24 +37,27 @@ exports.handler = async (event) => {
       };
     }
 
-    await client.connect();
-    const database = client.db('futscore');
-    const collection = database.collection('packs');
-    
-    const newPack = {
-      ...pack,
-      _id: new ObjectId().toString(),
-      created_at: new Date().toISOString(),
-    };
-    
-    await collection.insertOne(newPack);
+    const createdPack = await prisma.pack.create({
+      data: {
+        name: pack.name,
+        price: pack.price,
+        items: {
+          create: pack.items.map(item => ({
+            product_type: item.product_type,
+            quantity: item.quantity,
+            shirt_type: item.shirt_type || null,
+          })),
+        },
+      },
+      include: { items: true },
+    });
     
     return {
       statusCode: 201,
       headers: {
         'Access-Control-Allow-Origin': '*',
       },
-      body: JSON.stringify(newPack),
+      body: JSON.stringify(createdPack),
     };
   } catch (error) {
     return {
@@ -68,7 +67,5 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({ error: 'Failed to create pack' }),
     };
-  } finally {
-    await client.close();
   }
 }; 

@@ -1,4 +1,5 @@
-const { MongoClient } = require('mongodb');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 exports.handler = async (event) => {
   // Handle CORS preflight
@@ -24,16 +25,10 @@ exports.handler = async (event) => {
     };
   }
 
-  const uri = process.env.MONGODB_URI;
-  const client = new MongoClient(uri);
-
   try {
-    await client.connect();
-    const database = client.db('futscore');
-    const collection = database.collection('packs');
-    
-    const packs = await collection.find({}).toArray();
-    
+    const packs = await prisma.pack.findMany({
+      include: { items: true },
+    });
     return {
       statusCode: 200,
       headers: {
@@ -49,7 +44,5 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({ error: 'Failed to fetch packs' }),
     };
-  } finally {
-    await client.close();
   }
 }; 

@@ -1,4 +1,5 @@
-const { MongoClient } = require('mongodb');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 exports.handler = async (event) => {
   // Handle CORS preflight
@@ -24,28 +25,11 @@ exports.handler = async (event) => {
     };
   }
 
-  const uri = process.env.MONGODB_URI;
-  const client = new MongoClient(uri);
-
   try {
-    const packId = event.path.split('/').pop();
-    
-    await client.connect();
-    const database = client.db('futscore');
-    const collection = database.collection('packs');
-    
-    const result = await collection.deleteOne({ _id: packId });
-    
-    if (result.deletedCount === 0) {
-      return {
-        statusCode: 404,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-        },
-        body: JSON.stringify({ error: 'Pack not found' }),
-      };
-    }
-    
+    const packId = parseInt(event.path.split('/').pop(), 10);
+    // Delete all items first (if not set to cascade in schema)
+    await prisma.packItem.deleteMany({ where: { pack_id: packId } });
+    await prisma.pack.delete({ where: { id: packId } });
     return {
       statusCode: 200,
       headers: {
@@ -61,7 +45,5 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({ error: 'Failed to delete pack' }),
     };
-  } finally {
-    await client.close();
   }
 }; 

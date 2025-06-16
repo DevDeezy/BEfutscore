@@ -1,4 +1,5 @@
-const { MongoClient } = require('mongodb');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 exports.handler = async (event) => {
   // Handle CORS preflight
@@ -7,8 +8,6 @@ exports.handler = async (event) => {
       statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       },
       body: '',
     };
@@ -24,11 +23,8 @@ exports.handler = async (event) => {
     };
   }
 
-  const uri = process.env.MONGODB_URI;
-  const client = new MongoClient(uri);
-
   try {
-    const packId = event.path.split('/').pop();
+    const packId = parseInt(event.path.split('/').pop(), 10);
     const pack = JSON.parse(event.body);
     
     // Validate required fields
@@ -42,32 +38,29 @@ exports.handler = async (event) => {
       };
     }
 
-    await client.connect();
-    const database = client.db('futscore');
-    const collection = database.collection('packs');
-    
-    const result = await collection.findOneAndUpdate(
-      { _id: packId },
-      { $set: pack },
-      { returnDocument: 'after' }
-    );
-    
-    if (!result.value) {
-      return {
-        statusCode: 404,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
+    // Delete old items and create new ones
+    await prisma.packItem.deleteMany({ where: { pack_id: packId } });
+    const updatedPack = await prisma.pack.update({
+      where: { id: packId },
+      data: {
+        name: pack.name,
+        price: pack.price,
+        items: {
+          create: pack.items.map(item => ({
+            product_type: item.product_type,
+            quantity: item.quantity,
+            shirt_type: item.shirt_type || null,
+          })),
         },
-        body: JSON.stringify({ error: 'Pack not found' }),
-      };
-    }
-    
+      },
+      include: { items: true },
+    });
     return {
       statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
       },
-      body: JSON.stringify(result.value),
+      body: JSON.stringify(updatedPack),
     };
   } catch (error) {
     return {
@@ -77,7 +70,5 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({ error: 'Failed to update pack' }),
     };
-  } finally {
-    await client.close();
   }
 }; 
