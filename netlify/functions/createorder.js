@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const { calculateOrderPrice } = require('./calculateOrderPrice');
 
 exports.handler = async (event) => {
   // CORS (add if needed)
@@ -25,6 +26,16 @@ exports.handler = async (event) => {
 
   try {
     const { userId, items, address } = JSON.parse(event.body || '{}');
+
+    // Fetch packs and shirt types for price calculation
+    const packs = await prisma.pack.findMany({ include: { items: true } });
+    const shirtTypes = await prisma.shirtType.findMany();
+    // TODO: Replace with dynamic shoe price if needed
+    const shoePrice = 50;
+
+    // Calculate price
+    const finalPrice = calculateOrderPrice(items, packs, shirtTypes, shoePrice);
+
     const order = await prisma.order.create({
       data: {
         user_id: Number(userId),
@@ -36,6 +47,7 @@ exports.handler = async (event) => {
         address_pais: address.pais,
         address_codigo_postal: address.codigoPostal,
         address_telemovel: address.telemovel,
+        price: finalPrice,
         items: {
           create: items.map((item) => ({
             product_type: item.product_type,
@@ -43,6 +55,7 @@ exports.handler = async (event) => {
             image_back: item.image_back || '',
             size: item.size,
             player_name: item.player_name,
+            shirt_type_id: item.shirt_type_id || null,
           }))
         }
       }
@@ -50,7 +63,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 201,
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ id: order.id }),
+      body: JSON.stringify({ id: order.id, price: finalPrice }),
     };
   } catch (err) {
     return {

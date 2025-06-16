@@ -38,17 +38,18 @@ model Order {
 }
 
 model OrderItem {
-  id          Int    @id @default(autoincrement())
-  order       Order  @relation(fields: [order_id], references: [id])
-  order_id     Int
-  product_type String
-  image_front  String
-  image_back   String?
-  size        String
-  player_name  String?
-  shirt_type   String?  // Added for shirt type
+  id            Int    @id @default(autoincrement())
+  order         Order  @relation(fields: [order_id], references: [id])
+  order_id      Int
+  product_type  String
+  image_front   String
+  image_back    String?
+  size          String
+  player_name   String?
+  shirt_type_id Int?
+  shirtType     ShirtType? @relation(fields: [shirt_type_id], references: [id])
 
-  @@map("orderitems") // This maps the Prisma model OrderItem to the actual table "ordersitems"
+  @@map("orderitems")
 }
 
 model Pack {
@@ -67,7 +68,16 @@ model PackItem {
   pack_id       Int
   product_type  String
   quantity      Int
-  shirt_type    String?  // Only for t-shirts
+  shirt_type_id Int?
+  shirtType     ShirtType? @relation(fields: [shirt_type_id], references: [id])
 
   @@map("packitems")
+}
+
+model ShirtType {
+  id         Int         @id @default(autoincrement())
+  name       String      @unique
+  price      Float
+  packItems  PackItem[]
+  orderItems OrderItem[]
 }
