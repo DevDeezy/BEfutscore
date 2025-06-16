@@ -80,4 +80,6 @@ model ShirtType {
   price      Float
   packItems  PackItem[]
   orderItems OrderItem[]
+
+    @@map("shirttypes") // <-- Add this line
 }
