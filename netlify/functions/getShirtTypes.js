@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 exports.handler = async (event) => {
+  console.log('getShirtTypes called', { method: event.httpMethod });
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers: corsHeaders, body: '' };
   }
@@ -16,8 +17,10 @@ exports.handler = async (event) => {
   }
   try {
     const types = await prisma.shirtType.findMany();
+    console.log('Fetched shirt types:', types);
     return { statusCode: 200, headers: corsHeaders, body: JSON.stringify(types) };
   } catch (error) {
-    return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: 'Failed to fetch shirt types' }) };
+    console.error('Error in getShirtTypes:', error);
+    return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: 'Failed to fetch shirt types', details: error.message }) };
   }
 }; 
