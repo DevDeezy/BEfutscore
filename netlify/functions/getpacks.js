@@ -1,3 +1,5 @@
+const { MongoClient } = require('mongodb');
+
 exports.handler = async (event) => {
   // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
@@ -22,16 +24,32 @@ exports.handler = async (event) => {
     };
   }
 
-  // TODO: Fetch packs from database
-  const packs = [
-    { _id: '1', name: 'Starter Pack', items: [{ productType: 'tshirt', quantity: 1 }], price: 10 },
-    { _id: '2', name: 'Pro Pack', items: [{ productType: 'shoes', quantity: 2 }], price: 25 },
-  ];
-  return {
-    statusCode: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-    },
-    body: JSON.stringify(packs),
-  };
+  const uri = process.env.MONGODB_URI;
+  const client = new MongoClient(uri);
+
+  try {
+    await client.connect();
+    const database = client.db('futscore');
+    const collection = database.collection('packs');
+    
+    const packs = await collection.find({}).toArray();
+    
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      },
+      body: JSON.stringify(packs),
+    };
+  } catch (error) {
+    return {
+      statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      },
+      body: JSON.stringify({ error: 'Failed to fetch packs' }),
+    };
+  } finally {
+    await client.close();
+  }
 }; 

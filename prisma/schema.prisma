@@ -46,7 +46,28 @@ model OrderItem {
   image_back   String?
   size        String
   player_name  String?
+  shirt_type   String?  // Added for shirt type
 
-      @@map("orderitems") // This maps the Prisma model OrderItem to the actual table "ordersitems"
+  @@map("orderitems") // This maps the Prisma model OrderItem to the actual table "ordersitems"
+}
 
+model Pack {
+  id          Int        @id @default(autoincrement())
+  name        String
+  price       Float
+  created_at  DateTime   @default(now())
+  items       PackItem[]
+
+  @@map("packs")
+}
+
+model PackItem {
+  id            Int      @id @default(autoincrement())
+  pack          Pack     @relation(fields: [pack_id], references: [id])
+  pack_id       Int
+  product_type  String
+  quantity      Int
+  shirt_type    String?  // Only for t-shirts
+
+  @@map("packitems")
 }
