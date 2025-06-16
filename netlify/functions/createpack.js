@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 exports.handler = async (event) => {
+  console.log('createpack called', { method: event.httpMethod, body: event.body });
   // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -27,9 +28,11 @@ exports.handler = async (event) => {
 
   try {
     const pack = JSON.parse(event.body);
+    console.log('Parsed pack:', pack);
     
     // Validate required fields
     if (!pack.name || !pack.items || !Array.isArray(pack.items) || pack.items.length === 0 || typeof pack.price !== 'number') {
+      console.error('Invalid pack data:', pack);
       return {
         statusCode: 400,
         headers: corsHeaders,
@@ -45,12 +48,13 @@ exports.handler = async (event) => {
           create: pack.items.map(item => ({
             product_type: item.product_type,
             quantity: item.quantity,
-            shirt_type: item.shirt_type || null,
+            shirt_type_id: item.shirt_type_id || null,
           })),
         },
       },
       include: { items: true },
     });
+    console.log('Created pack:', createdPack);
     
     return {
       statusCode: 201,
@@ -58,10 +62,11 @@ exports.handler = async (event) => {
       body: JSON.stringify(createdPack),
     };
   } catch (error) {
+    console.error('Error in createpack:', error);
     return {
       statusCode: 500,
       headers: corsHeaders,
-      body: JSON.stringify({ error: 'Failed to create pack' }),
+      body: JSON.stringify({ error: 'Failed to create pack', details: error.message }),
     };
   }
 }; 
