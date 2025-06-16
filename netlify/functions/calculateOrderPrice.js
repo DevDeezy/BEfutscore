@@ -74,8 +74,6 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
   return minPrice === Infinity ? 0 : minPrice;
 }
 
-module.exports = { calculateOrderPrice };
-
 // Netlify function handler
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
