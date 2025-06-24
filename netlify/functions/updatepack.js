@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 exports.handler = async (event) => {
+  console.log('updatepack called', { method: event.httpMethod, body: event.body });
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
@@ -57,10 +58,11 @@ exports.handler = async (event) => {
       body: JSON.stringify(updatedPack),
     };
   } catch (error) {
+    console.error('Error in updatepack:', error);
     return {
       statusCode: 500,
       headers: corsHeaders,
-      body: JSON.stringify({ error: 'Failed to update pack' }),
+      body: JSON.stringify({ error: 'Failed to update pack', details: error.message, stack: error.stack }),
     };
   }
 }; 

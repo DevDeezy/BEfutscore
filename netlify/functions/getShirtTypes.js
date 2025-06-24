@@ -21,6 +21,6 @@ exports.handler = async (event) => {
     return { statusCode: 200, headers: corsHeaders, body: JSON.stringify(types) };
   } catch (error) {
     console.error('Error in getShirtTypes:', error);
-    return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: 'Failed to fetch shirt types', details: error.message }) };
+    return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: 'Failed to fetch shirt types', details: error.message, stack: error.stack }) };
   }
 }; 

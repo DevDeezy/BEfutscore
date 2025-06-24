@@ -82,6 +82,7 @@ const corsHeaders = {
 };
 
 exports.handler = async (event) => {
+  console.log('calculateOrderPrice called', { method: event.httpMethod, body: event.body });
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers: corsHeaders, body: '' };
   }
@@ -96,6 +97,7 @@ exports.handler = async (event) => {
     const price = calculateOrderPrice(items, packs, shirtTypes, shoePrice);
     return { statusCode: 200, headers: corsHeaders, body: JSON.stringify({ price }) };
   } catch (error) {
-    return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: 'Failed to calculate price' }) };
+    console.error('Error in calculateOrderPrice:', error);
+    return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: 'Failed to calculate price', details: error.message, stack: error.stack }) };
   }
 }; 

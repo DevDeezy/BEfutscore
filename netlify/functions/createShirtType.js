@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 exports.handler = async (event) => {
+  console.log('createShirtType called', { method: event.httpMethod, body: event.body });
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers: corsHeaders, body: '' };
   }
@@ -17,11 +18,14 @@ exports.handler = async (event) => {
   try {
     const { name, price } = JSON.parse(event.body);
     if (!name || typeof price !== 'number') {
+      console.error('Invalid shirt type data:', { name, price });
       return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'Invalid data' }) };
     }
     const shirtType = await prisma.shirtType.create({ data: { name, price } });
+    console.log('Created shirt type:', shirtType);
     return { statusCode: 201, headers: corsHeaders, body: JSON.stringify(shirtType) };
   } catch (error) {
-    return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: 'Failed to create shirt type' }) };
+    console.error('Error in createShirtType:', error);
+    return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: 'Failed to create shirt type', details: error.message, stack: error.stack }) };
   }
 }; 

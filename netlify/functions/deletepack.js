@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 exports.handler = async (event) => {
+  console.log('deletepack called', { method: event.httpMethod, path: event.path });
   // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -36,10 +37,11 @@ exports.handler = async (event) => {
       body: JSON.stringify({ message: 'Pack deleted successfully' }),
     };
   } catch (error) {
+    console.error('Error in deletepack:', error);
     return {
       statusCode: 500,
       headers: corsHeaders,
-      body: JSON.stringify({ error: 'Failed to delete pack' }),
+      body: JSON.stringify({ error: 'Failed to delete pack', details: error.message, stack: error.stack }),
     };
   }
 }; 

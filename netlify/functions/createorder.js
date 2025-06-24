@@ -3,6 +3,7 @@ const prisma = new PrismaClient();
 const { calculateOrderPrice } = require('./calculateOrderPrice');
 
 exports.handler = async (event) => {
+  console.log('createorder called', { method: event.httpMethod, body: event.body });
   // CORS (add if needed)
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -66,10 +67,11 @@ exports.handler = async (event) => {
       body: JSON.stringify({ id: order.id, price: finalPrice }),
     };
   } catch (err) {
+    console.error('Error in createorder:', err);
     return {
       statusCode: 500,
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ error: err.message }),
+      body: JSON.stringify({ error: err.message, stack: err.stack }),
     };
   }
 };

@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 exports.handler = async (event) => {
+  console.log('deleteShirtType called', { method: event.httpMethod, path: event.path });
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers: corsHeaders, body: '' };
   }
@@ -17,8 +18,10 @@ exports.handler = async (event) => {
   try {
     const id = parseInt(event.path.split('/').pop(), 10);
     await prisma.shirtType.delete({ where: { id } });
+    console.log('Deleted shirt type:', id);
     return { statusCode: 200, headers: corsHeaders, body: JSON.stringify({ message: 'Deleted' }) };
   } catch (error) {
-    return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: 'Failed to delete shirt type' }) };
+    console.error('Error in deleteShirtType:', error);
+    return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: 'Failed to delete shirt type', details: error.message, stack: error.stack }) };
   }
 }; 

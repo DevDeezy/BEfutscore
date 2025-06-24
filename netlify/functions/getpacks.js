@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 exports.handler = async (event) => {
+  console.log('getpacks called', { method: event.httpMethod });
   // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -29,16 +30,18 @@ exports.handler = async (event) => {
     const packs = await prisma.pack.findMany({
       include: { items: true },
     });
+    console.log('Fetched packs:', packs);
     return {
       statusCode: 200,
       headers: corsHeaders,
       body: JSON.stringify(packs),
     };
   } catch (error) {
+    console.error('Error in getpacks:', error);
     return {
       statusCode: 500,
       headers: corsHeaders,
-      body: JSON.stringify({ error: 'Failed to fetch packs' }),
+      body: JSON.stringify({ error: 'Failed to fetch packs', details: error.message, stack: error.stack }),
     };
   }
 }; 
