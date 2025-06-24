@@ -48,7 +48,7 @@ exports.handler = async (event) => {
           create: pack.items.map(item => ({
             product_type: item.product_type,
             quantity: item.quantity,
-            shirt_type_id: item.shirt_type_id || null,
+            shirtType: item.shirt_type_id || null,
           })),
         },
       },
