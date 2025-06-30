@@ -54,8 +54,6 @@ exports.handler = async (event) => {
         total_price: finalPrice,
         items: {
           create: items.map((item) => ({
-            name: item.name,
-            price: item.price,
             quantity: item.quantity,
             product_id: item.product_id || null,
             product_type: item.product_type,
