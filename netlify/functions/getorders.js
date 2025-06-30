@@ -23,7 +23,10 @@ exports.handler = async (event) => {
   }
 
   try {
+    const userId = event.queryStringParameters.userId;
+    const whereClause = userId ? { userId: parseInt(userId, 10) } : {};
     const orders = await prisma.order.findMany({
+      where: whereClause,
       include: {
         items: true,
         user: true, // if you have a relation set up
