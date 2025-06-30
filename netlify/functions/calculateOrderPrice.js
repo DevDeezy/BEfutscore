@@ -18,10 +18,16 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
   // Helper: count items by type and shirt_type_id
   const itemCounts = {};
   for (const item of orderItems) {
-    const key = item.product_type === 'tshirt'
+    const key = item.product_id 
+      ? `product_${item.product_id}_${item.size}` // Unique key for catalog products
+      : item.product_type === 'tshirt'
       ? `tshirt_${item.shirt_type_id}`
-      : `shoes`;
-    itemCounts[key] = (itemCounts[key] || 0) + 1;
+      : `shoes`; // Fallback for old shoe logic if any
+    
+    if (!itemCounts[key]) {
+      itemCounts[key] = { count: 0, price: item.price || 0 };
+    }
+    itemCounts[key].count += item.quantity || 1;
   }
 
   // Use an iterative approach to avoid stack overflow
@@ -37,14 +43,17 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
       const newCounts = { ...counts };
 
       for (const packItem of pack.items) {
+        // This part is tricky because packs are generic.
+        // We need to find a matching item in the cart to consume.
+        // For now, we assume pack definition matches the old logic.
         const key = packItem.product_type === 'tshirt'
           ? `tshirt_${packItem.shirt_type_id}`
           : `shoes`;
-        if ((newCounts[key] || 0) < packItem.quantity) {
+        if ((newCounts[key]?.count || 0) < packItem.quantity) {
           canApply = false;
           break;
         }
-        newCounts[key] -= packItem.quantity;
+        newCounts[key].count -= packItem.quantity;
       }
 
       if (canApply) {
@@ -57,12 +66,15 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
       // No more packs can be applied, sum remaining items
       let rest = 0;
       for (const key in counts) {
-        if (counts[key] > 0) {
+        if (counts[key].count > 0) {
           if (key.startsWith('tshirt_')) {
             const shirtTypeId = parseInt(key.split('_')[1], 10);
-            rest += counts[key] * getShirtPrice(shirtTypeId);
-          } else if (key === 'shoes') {
-            rest += counts[key] * shoePrice;
+            rest += counts[key].count * getShirtPrice(shirtTypeId);
+          } else if (key === 'shoes') { // Old logic fallback
+            rest += counts[key].count * shoePrice;
+          } else if (key.startsWith('product_')) {
+            // New logic for catalog products
+            rest += counts[key].count * counts[key].price;
           }
         }
       }
@@ -94,8 +106,14 @@ exports.handler = async (event) => {
     const { items } = JSON.parse(event.body || '{}');
     const packs = await prisma.pack.findMany({ include: { items: true } });
     const shirtTypes = await prisma.shirtType.findMany();
-    const shoePrice = 50; // TODO: make dynamic if needed
-    const price = calculateOrderPrice(items, packs, shirtTypes, shoePrice);
+    
+    // Expand items from the cart, as calculateOrderPrice expects a flat list
+    const expandedItems = items.flatMap(item => 
+      Array(item.quantity || 1).fill(item)
+    );
+
+    const shoePrice = 0; // Deprecated, price now comes from item itself
+    const price = calculateOrderPrice(expandedItems, packs, shirtTypes, shoePrice);
     return { statusCode: 200, headers: corsHeaders, body: JSON.stringify({ price }) };
   } catch (error) {
     console.error('Error in calculateOrderPrice:', error);
