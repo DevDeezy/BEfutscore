@@ -15,6 +15,7 @@ model User {
   password_reset_required Boolean @default(true)
   created_at DateTime @default(now())
   orders    Order[]
+  addresses Address[]
   
   @@map("users") // This maps the Prisma model User to the actual table "users"
 }
@@ -110,4 +111,17 @@ model Product {
   orderItems      OrderItem[]
 
   @@map("products")
+}
+
+model Address {
+  id           Int    @id @default(autoincrement())
+  user         User   @relation(fields: [userId], references: [id])
+  userId       Int
+  nome         String
+  telemovel    String
+  morada       String
+  cidade       String
+  distrito     String
+  codigoPostal String
+  pais         String  @default("Portugal")
 }
