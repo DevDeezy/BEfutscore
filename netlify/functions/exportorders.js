@@ -1,15 +1,7 @@
 const ExcelJS = require('exceljs');
 const { Buffer } = require('buffer');
-const fs = require('fs');
-const path = require('path');
-
-// Helper to get orders (simulate DB or read from file)
-function getOrders() {
-  // In production, fetch from DB. Here, read from a file for demo:
-  const ORDERS_JSON_PATH = path.join(__dirname, 'orders.json');
-  if (!fs.existsSync(ORDERS_JSON_PATH)) return [];
-  return JSON.parse(fs.readFileSync(ORDERS_JSON_PATH, 'utf8'));
-}
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 exports.handler = async function(event, context) {
   if (event.httpMethod === 'OPTIONS') {
@@ -17,7 +9,7 @@ exports.handler = async function(event, context) {
       statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       },
       body: '',
@@ -25,99 +17,113 @@ exports.handler = async function(event, context) {
   }
 
   try {
-    const orders = getOrders();
+    const { orders: receivedOrders } = JSON.parse(event.body);
+    const orderIds = receivedOrders.map(o => o.id);
+
+    const orders = await prisma.order.findMany({
+      where: {
+        id: { in: orderIds }
+      },
+      include: {
+        items: true,
+        user: true,
+      }
+    });
+
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Orders');
-    
-    // Define columns
-    worksheet.columns = [
-      { header: 'ID da Encomenda', key: 'orderId', width: 15 },
-      { header: 'Utilizador', key: 'user', width: 30 },
-      { header: 'Estado', key: 'status', width: 15 },
-      { header: 'Data de Criação', key: 'createdAt', width: 20 },
-      { header: 'Itens', key: 'items', width: 50 },
-      { header: 'Imagens', key: 'images', width: 40 },
-      { header: 'Preço Total', key: 'totalPrice', width: 15 },
-      { header: 'Morada', key: 'address', width: 50 },
-    ];
+    const worksheet = workbook.addWorksheet('Encomendas');
 
-    let imageRow = 2; // Start images from the second row
+    let rowIndex = 1;
     for (const order of orders) {
-      const user = order.user?.email || 'N/A';
-      const status = order.status || 'N/A';
-      const createdAt = new Date(order.created_at).toLocaleString();
-      const totalPrice = `€${order.total_price.toFixed(2)}`;
-      
-      const addressParts = [
-        order.address_nome,
-        order.address_morada,
-        order.address_cidade,
-        order.address_distrito,
-        order.address_codigo_postal,
-        order.address_pais,
-        order.address_telemovel,
-      ];
-      const address = addressParts.filter(Boolean).join(', ');
+      worksheet.getRow(rowIndex).height = 80;
+      worksheet.getRow(rowIndex + 1).height = 15;
 
-      // Aggregate item details
-      const itemDetails = order.items.map(item => {
-        const type = item.product_type === 'tshirt' ? 'Camisola' : 'Sapatilhas';
-        const name = item.name || 'Personalizado';
-        return `${item.quantity}x ${name} (${type}, Tamanho: ${item.size})`;
-      }).join('\n');
-
-      // Add the row with aggregated data
-      worksheet.addRow({
-        orderId: order.id,
-        user,
-        status,
-        createdAt,
-        items: itemDetails,
-        totalPrice,
-        address,
-      });
-
-      // Add images to the 'images' cell for this row
-      let currentImageCol = 6; // 'Imagens' is the 6th column (1-based index)
-      for (const item of order.items) {
-        if (item.image_front && item.image_front.startsWith('data:image')) {
-          const imageId = workbook.addImage({
-            base64: item.image_front.split(',')[1],
-            extension: item.image_front.includes('png') ? 'png' : 'jpeg',
-          });
-          
-          worksheet.addImage(imageId, {
-            tl: { col: currentImageCol, row: imageRow - 1 },
-            ext: { width: 50, height: 50 },
-          });
-          
+      let colIndex = 1;
+      if (order.items) {
+        for (const item of order.items) {
+          if (item.image_front && item.image_front.startsWith('data:image')) {
+            const extension = item.image_front.substring(item.image_front.indexOf('/') + 1, item.image_front.indexOf(';'));
+            const base64 = item.image_front.split(',')[1];
+            if (base64) {
+              const imageId = workbook.addImage({
+                base64: base64,
+                extension: extension,
+              });
+              worksheet.addImage(imageId, {
+                tl: { col: colIndex - 1, row: rowIndex - 1 },
+                ext: { width: 100, height: 75 }
+              });
+            }
+          }
+          worksheet.getColumn(colIndex).width = 15;
+          const description = `${item.size || ''} ${item.player_name ? `#${item.player_name}` : ''}`.trim();
+          const cell = worksheet.getCell(rowIndex + 1, colIndex);
+          cell.value = description;
+          cell.alignment = { horizontal: 'center' };
+          colIndex++;
         }
       }
-      worksheet.getRow(imageRow).height = 40; // Set row height to accommodate images
-      imageRow++;
+
+      let addressCol = colIndex + 1;
+      const addressParts = [
+        `Nome: ${order.address_nome}`,
+        `Morada: ${order.address_morada}`,
+        `Cidade: ${order.address_cidade}`,
+        `Distrito: ${order.address_distrito}`,
+        `País: ${order.address_pais}`,
+        `Código-Postal: ${order.address_codigo_postal}`,
+        `Telemóvel: ${order.address_telemovel}`,
+      ];
+      const addressText = addressParts.join('\n');
+      const addressCell = worksheet.getCell(rowIndex, addressCol);
+      addressCell.value = addressText;
+      addressCell.alignment = { wrapText: true, vertical: 'top' };
+      worksheet.getColumn(addressCol).width = 40;
+
+      let priceCol = addressCol + 2;
+      worksheet.getCell(rowIndex, priceCol).value = 'Total Futscore';
+      worksheet.getCell(rowIndex, priceCol + 1).value = order.total_price;
+      worksheet.getColumn(priceCol).width = 15;
+      worksheet.getColumn(priceCol + 1).width = 10;
+      
+      worksheet.getCell(rowIndex, priceCol + 2).value = 'Total Apple';
+      worksheet.getCell(rowIndex, priceCol + 3).value = order.total_price;
+      worksheet.getColumn(priceCol + 2).width = 15;
+      worksheet.getColumn(priceCol + 3).width = 10;
+
+      rowIndex += 2;
+      const separatorRow = worksheet.getRow(rowIndex);
+      separatorRow.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFF0000' }
+      };
+      separatorRow.height = 5;
+
+      rowIndex += 1;
     }
 
-    // Write to buffer
     const buffer = await workbook.xlsx.writeBuffer();
     return {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': 'attachment; filename=orders_with_images.xlsx',
+        'Content-Disposition': 'attachment; filename=encomendas.xlsx',
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       },
       isBase64Encoded: true,
       body: Buffer.from(buffer).toString('base64'),
     };
   } catch (err) {
+    console.error('Error generating Excel:', err);
     return {
       statusCode: 500,
       body: 'Error generating Excel: ' + err.message,
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       },
     };
