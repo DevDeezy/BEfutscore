@@ -2,6 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const ExcelJS = require('exceljs');
 const fs = require('fs').promises; // Use promises version of fs
+const axios = require('axios'); // Import axios
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -55,20 +56,44 @@ exports.handler = async (event) => {
       let colIndex = 1;
       if (order.items) {
         for (const item of order.items) {
+          let imageBuffer;
+          let imageExtension = 'jpeg'; // Default extension
+
           if (item.image_front && item.image_front.startsWith('data:image')) {
-            const extension = item.image_front.substring(item.image_front.indexOf('/') + 1, item.image_front.indexOf(';'));
+            // Handle base64 encoded images
+            imageExtension = item.image_front.substring(item.image_front.indexOf('/') + 1, item.image_front.indexOf(';'));
             const base64 = item.image_front.split(',')[1];
             if (base64) {
-              const imageId = workbook.addImage({
-                base64: base64,
-                extension: extension,
-              });
-              worksheet.addImage(imageId, {
-                tl: { col: colIndex - 1, row: rowIndex - 1 },
-                ext: { width: 100, height: 75 }
-              });
+              imageBuffer = Buffer.from(base64, 'base64');
+            }
+          } else if (item.image_front && item.image_front.startsWith('http')) {
+            // Handle URL images
+            try {
+              const response = await axios.get(item.image_front, { responseType: 'arraybuffer' });
+              imageBuffer = Buffer.from(response.data, 'binary');
+              // Try to get extension from URL
+              const urlPath = new URL(item.image_front).pathname;
+              const ext = urlPath.split('.').pop();
+              if (['jpeg', 'jpg', 'png', 'gif'].includes(ext)) {
+                imageExtension = ext;
+              }
+            } catch (error) {
+              console.error(`Failed to download image from ${item.image_front}`, error);
+              // Optionally, skip to the next item or use a placeholder
             }
           }
+
+          if (imageBuffer) {
+            const imageId = workbook.addImage({
+              buffer: imageBuffer,
+              extension: imageExtension,
+            });
+            worksheet.addImage(imageId, {
+              tl: { col: colIndex - 1, row: rowIndex - 1 },
+              ext: { width: 100, height: 75 }
+            });
+          }
+          
           worksheet.getColumn(colIndex).width = 15;
           const description = `${item.size || ''} ${item.player_name ? `#${item.player_name}` : ''}`.trim();
           const cell = worksheet.getCell(rowIndex + 1, colIndex);
