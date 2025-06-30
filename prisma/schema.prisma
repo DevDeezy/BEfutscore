@@ -90,9 +90,10 @@ model ShirtType {
 }
 
 model ProductType {
-  id       Int       @id @default(autoincrement())
-  name     String    @unique
-  products Product[]
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  base_type String
+  products  Product[]
 
   @@map("product_types")
 }
