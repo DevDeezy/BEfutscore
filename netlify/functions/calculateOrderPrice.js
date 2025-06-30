@@ -27,7 +27,7 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
     if (!itemCounts[key]) {
       itemCounts[key] = { count: 0, price: item.price || 0 };
     }
-    itemCounts[key].count += item.quantity || 1;
+    itemCounts[key].count += 1;
   }
 
   // Use an iterative approach to avoid stack overflow

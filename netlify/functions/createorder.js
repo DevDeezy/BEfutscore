@@ -34,8 +34,11 @@ exports.handler = async (event) => {
     // TODO: Replace with dynamic shoe price if needed
     const shoePrice = 50;
 
-    // Calculate price
-    const finalPrice = calculateOrderPrice(items, packs, shirtTypes, shoePrice);
+    // Calculate price by expanding items with quantity
+    const expandedItems = items.flatMap(item => 
+      Array(item.quantity || 1).fill(item)
+    );
+    const finalPrice = calculateOrderPrice(expandedItems, packs, shirtTypes, shoePrice);
 
     const order = await prisma.order.create({
       data: {
