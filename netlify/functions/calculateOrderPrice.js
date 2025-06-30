@@ -80,6 +80,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
+exports.calculateOrderPrice = calculateOrderPrice;
+
 exports.handler = async (event) => {
   console.log('calculateOrderPrice called', { method: event.httpMethod, body: event.body });
   if (event.httpMethod === 'OPTIONS') {

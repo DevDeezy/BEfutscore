@@ -48,7 +48,7 @@ exports.handler = async (event) => {
         address_pais: address.pais,
         address_codigo_postal: address.codigoPostal,
         address_telemovel: address.telemovel,
-        price: finalPrice,
+        total_price: finalPrice,
         items: {
           create: items.map((item) => ({
             product_type: item.product_type,
