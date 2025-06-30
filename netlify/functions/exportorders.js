@@ -16,8 +16,33 @@ exports.handler = async function(event, context) {
     };
   }
 
+  if (event.httpMethod !== 'POST') {
+    return {
+      statusCode: 405,
+      body: 'Method Not Allowed',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+    };
+  }
+
   try {
+    console.log('Received event body for export:', event.body);
+    if (!event.body) {
+      return {
+        statusCode: 400,
+        body: 'Bad Request: No body provided.',
+        headers: { 'Access-Control-Allow-Origin': '*' },
+      };
+    }
     const { orders: receivedOrders } = JSON.parse(event.body);
+
+    if (!receivedOrders || !Array.isArray(receivedOrders)) {
+      return {
+        statusCode: 400,
+        body: 'Bad Request: "orders" array not found or not an array.',
+        headers: { 'Access-Control-Allow-Origin': '*' },
+      };
+    }
+    
     const orderIds = receivedOrders.map(o => o.id);
 
     const orders = await prisma.order.findMany({
