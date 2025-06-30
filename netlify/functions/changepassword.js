@@ -42,7 +42,7 @@ exports.handler = async (event) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    await prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
         password: hashedPassword,
@@ -50,10 +50,32 @@ exports.handler = async (event) => {
       },
     });
 
+    const newToken = jwt.sign(
+      {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        created_at: updatedUser.created_at,
+        password_reset_required: updatedUser.password_reset_required,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
     return {
       statusCode: 200,
       headers: corsHeaders,
-      body: JSON.stringify({ message: 'Password updated successfully' }),
+      body: JSON.stringify({
+        message: 'Password updated successfully',
+        token: newToken,
+        user: {
+          id: updatedUser.id,
+          email: updatedUser.email,
+          role: updatedUser.role,
+          created_at: updatedUser.created_at,
+          password_reset_required: updatedUser.password_reset_required,
+        },
+      }),
     };
   } catch (error) {
     console.error('Error in changePassword:', error);
