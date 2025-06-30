@@ -3,15 +3,17 @@
     "version": "1.0.0",
     "main": "index.js",
     "dependencies": {
-      "@prisma/client": "^5.0.0",
-      "bcryptjs": "^2.4.3",
-      "exceljs": "^4.4.0",
-      "jsonwebtoken": "^9.0.0",
-      "prisma": "^5.0.0"
+        "@prisma/client": "^5.0.0",
+        "@types/file-saver": "^2.0.7",
+        "bcryptjs": "^2.4.3",
+        "exceljs": "^4.4.0",
+        "file-saver": "^2.0.5",
+        "jsonwebtoken": "^9.0.0",
+        "prisma": "^5.0.0"
     },
     "scripts": {
-      "build": "npm install && prisma generate",
-      "prisma:generate": "prisma generate",
-      "prisma:migrate": "prisma migrate deploy"
+        "build": "npm install && prisma generate",
+        "prisma:generate": "prisma generate",
+        "prisma:migrate": "prisma migrate deploy"
     }
-  }
+}
