@@ -1,9 +1,9 @@
-const ExcelJS = require('exceljs');
-const { Buffer } = require('buffer');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const ExcelJS = require('exceljs');
+const fs = require('fs').promises; // Use promises version of fs
 
-exports.handler = async function(event, context) {
+exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
@@ -17,34 +17,23 @@ exports.handler = async function(event, context) {
   }
 
   if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      body: 'Method Not Allowed',
-      headers: { 'Access-Control-Allow-Origin': '*' },
-    };
+    return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
   try {
-    console.log('Received event body for export:', event.body);
     if (!event.body) {
-      return {
-        statusCode: 400,
-        body: 'Bad Request: No body provided.',
-        headers: { 'Access-Control-Allow-Origin': '*' },
-      };
+      return { statusCode: 400, body: 'Request body is missing' };
     }
-    const { orders: receivedOrders } = JSON.parse(event.body);
+    const { orders: requestOrders } = JSON.parse(event.body);
 
-    if (!receivedOrders || !Array.isArray(receivedOrders)) {
-      return {
-        statusCode: 400,
-        body: 'Bad Request: "orders" array not found or not an array.',
-        headers: { 'Access-Control-Allow-Origin': '*' },
-      };
+    if (!requestOrders || !Array.isArray(requestOrders)) {
+        return { statusCode: 400, body: 'Invalid request: "orders" array is missing or not an array.' };
     }
     
-    const orderIds = receivedOrders.map(o => o.id);
+    // Extract just the IDs to prevent sending large data objects from client
+    const orderIds = requestOrders.map(o => o.id);
 
+    // Fetch full order details from DB
     const orders = await prisma.order.findMany({
       where: {
         id: { in: orderIds }
@@ -141,6 +130,7 @@ exports.handler = async function(event, context) {
       isBase64Encoded: true,
       body: Buffer.from(buffer).toString('base64'),
     };
+
   } catch (err) {
     console.error('Error generating Excel:', err);
     return {
