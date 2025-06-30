@@ -32,6 +32,7 @@ model Order {
   address_codigo_postal String
   address_telemovel String
   created_at       DateTime    @default(now())
+  total_price     Float       @default(0)
   items           OrderItem[]
 
     @@map("orders") // This maps the Prisma model Order to the actual table "orders"
