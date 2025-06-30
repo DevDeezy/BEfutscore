@@ -56,7 +56,7 @@ exports.handler = async (event) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, created_at: user.created_at },
+      { id: user.id, email: user.email, role: user.role, created_at: user.created_at, password_reset_required: user.password_reset_required },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -69,6 +69,7 @@ exports.handler = async (event) => {
         email: user.email,
         role: user.role,
         created_at: user.created_at,
+        password_reset_required: user.password_reset_required,
         token
       })
     };

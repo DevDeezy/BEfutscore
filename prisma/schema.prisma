@@ -12,6 +12,7 @@ model User {
   email     String   @unique
   password  String
   role      String   @default("user")
+  password_reset_required Boolean @default(true)
   created_at DateTime @default(now())
   orders    Order[]
   
