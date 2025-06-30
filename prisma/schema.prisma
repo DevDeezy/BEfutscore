@@ -40,16 +40,19 @@ model Order {
 }
 
 model OrderItem {
-  id            Int    @id @default(autoincrement())
-  order         Order  @relation(fields: [order_id], references: [id])
+  id            Int        @id @default(autoincrement())
+  order         Order      @relation(fields: [order_id], references: [id])
   order_id      Int
   product_type  String
-  image_front   String
+  image_front   String?
   image_back    String?
   size          String
+  quantity      Int        @default(1)
   player_name   String?
   shirt_type_id Int?
   shirtType     ShirtType? @relation(fields: [shirt_type_id], references: [id])
+  product_id    Int?
+  product       Product?   @relation(fields: [product_id], references: [id])
 
   @@map("orderitems")
 }
@@ -83,5 +86,27 @@ model ShirtType {
   packItems  PackItem[]
   orderItems OrderItem[]
 
-    @@map("shirttypes") // <-- Add this line
+  @@map("shirttypes")
+}
+
+model ProductType {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  products Product[]
+
+  @@map("product_types")
+}
+
+model Product {
+  id              Int         @id @default(autoincrement())
+  name            String
+  description     String?
+  price           Float
+  image_url       String
+  available_sizes String[]
+  productType     ProductType @relation(fields: [product_type_id], references: [id])
+  product_type_id Int
+  orderItems      OrderItem[]
+
+  @@map("products")
 }
