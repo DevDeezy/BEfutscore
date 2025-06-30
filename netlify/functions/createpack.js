@@ -45,11 +45,20 @@ exports.handler = async (event) => {
         name: pack.name,
         price: pack.price,
         items: {
-          create: pack.items.map(item => ({
-            product_type: item.product_type,
-            quantity: item.quantity,
-            shirtType: item.shirt_type_id || null,
-          })),
+          create: pack.items.map(item => {
+            const packItemData = {
+              product_type: item.product_type,
+              quantity: item.quantity,
+            };
+
+            if (item.product_type === 'tshirt' && item.shirt_type_id) {
+              packItemData.shirtType = {
+                connect: { id: item.shirt_type_id },
+              };
+            }
+
+            return packItemData;
+          }),
         },
       },
       include: { items: true },

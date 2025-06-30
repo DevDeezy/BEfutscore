@@ -24,52 +24,51 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
     itemCounts[key] = (itemCounts[key] || 0) + 1;
   }
 
-  // Try all possible pack combinations (greedy: largest pack first)
+  // Use an iterative approach to avoid stack overflow
   let minPrice = Infinity;
+  const stack = [{ counts: itemCounts, total: 0 }];
 
-  function tryPacks(remainingCounts, usedPacks = [], total = 0) {
-    let found = false;
+  while (stack.length > 0) {
+    const { counts, total } = stack.pop();
+
+    let foundPackToApply = false;
     for (const pack of packs) {
-      // Check if pack can be applied
       let canApply = true;
+      const newCounts = { ...counts };
+
       for (const packItem of pack.items) {
         const key = packItem.product_type === 'tshirt'
           ? `tshirt_${packItem.shirt_type_id}`
           : `shoes`;
-        if ((remainingCounts[key] || 0) < packItem.quantity) {
+        if ((newCounts[key] || 0) < packItem.quantity) {
           canApply = false;
           break;
         }
+        newCounts[key] -= packItem.quantity;
       }
+
       if (canApply) {
-        // Apply pack
-        const newCounts = { ...remainingCounts };
-        for (const packItem of pack.items) {
-          const key = packItem.product_type === 'tshirt'
-            ? `tshirt_${packItem.shirt_type_id}`
-            : `shoes`;
-          newCounts[key] -= packItem.quantity;
-        }
-        tryPacks(newCounts, [...usedPacks, pack], total + pack.price);
-        found = true;
+        foundPackToApply = true;
+        stack.push({ counts: newCounts, total: total + pack.price });
       }
     }
-    if (!found) {
+
+    if (!foundPackToApply) {
       // No more packs can be applied, sum remaining items
       let rest = 0;
-      for (const key in remainingCounts) {
-        if (key.startsWith('tshirt_')) {
-          const shirtTypeId = parseInt(key.split('_')[1], 10);
-          rest += (remainingCounts[key] || 0) * getShirtPrice(shirtTypeId);
-        } else if (key === 'shoes') {
-          rest += (remainingCounts[key] || 0) * shoePrice;
+      for (const key in counts) {
+        if (counts[key] > 0) {
+          if (key.startsWith('tshirt_')) {
+            const shirtTypeId = parseInt(key.split('_')[1], 10);
+            rest += counts[key] * getShirtPrice(shirtTypeId);
+          } else if (key === 'shoes') {
+            rest += counts[key] * shoePrice;
+          }
         }
       }
       minPrice = Math.min(minPrice, total + rest);
     }
   }
-
-  tryPacks(itemCounts);
 
   return minPrice === Infinity ? 0 : minPrice;
 }
