@@ -66,6 +66,7 @@ exports.handler = async (event) => {
             sexo: item.sexo || null,
             ano: item.ano || null,
             numero: item.numero || null,
+            patch_images: item.patch_images || [],
           }))
         }
       }

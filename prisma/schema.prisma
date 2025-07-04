@@ -54,6 +54,10 @@ model OrderItem {
   shirtType     ShirtType? @relation(fields: [shirt_type_id], references: [id])
   product_id    Int?
   product       Product?   @relation(fields: [product_id], references: [id])
+  sexo          String?
+  ano           String?
+  numero        String?
+  patch_images  String[]   // NEW: multiple patch images
 
   @@map("orderitems")
 }
