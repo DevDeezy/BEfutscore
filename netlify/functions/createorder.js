@@ -63,6 +63,9 @@ exports.handler = async (event) => {
             size: item.size,
             player_name: item.player_name,
             shirt_type_id: item.shirt_type_id || null,
+            sexo: item.sexo || null,
+            ano: item.ano || null,
+            numero: item.numero || null,
           }))
         }
       }

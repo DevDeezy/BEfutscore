@@ -109,6 +109,9 @@ model Product {
   productType     ProductType @relation(fields: [product_type_id], references: [id])
   product_type_id Int
   orderItems      OrderItem[]
+  sexo            String      @default("Neutro")
+  ano             String      @default("21/22")
+  numero          String?
 
   @@map("products")
 }
