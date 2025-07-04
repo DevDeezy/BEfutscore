@@ -35,9 +35,9 @@ model Order {
   created_at       DateTime    @default(now())
   total_price     Float       @default(0)
   items           OrderItem[]
+  proofReference  String?     // Payment reference (nullable)
 
-    @@map("orders") // This maps the Prisma model Order to the actual table "orders"
-
+  @@map("orders") // This maps the Prisma model Order to the actual table "orders"
 }
 
 model OrderItem {
