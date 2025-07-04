@@ -2,7 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const ExcelJS = require('exceljs');
 const fs = require('fs').promises; // Use promises version of fs
-const axios = require('axios'); // Import axios
+// const axios = require('axios'); // Remove axios
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -67,14 +67,16 @@ exports.handler = async (event) => {
               imageBuffer = Buffer.from(base64, 'base64');
             }
           } else if (item.image_front && item.image_front.startsWith('http')) {
-            // Handle URL images
+            // Handle URL images using fetch
             try {
-              const response = await axios.get(item.image_front, { responseType: 'arraybuffer' });
-              imageBuffer = Buffer.from(response.data, 'binary');
+              const response = await fetch(item.image_front);
+              if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
+              const arrayBuffer = await response.arrayBuffer();
+              imageBuffer = Buffer.from(arrayBuffer);
               // Try to get extension from URL
               const urlPath = new URL(item.image_front).pathname;
               const ext = urlPath.split('.').pop();
-              if (['jpeg', 'jpg', 'png', 'gif'].includes(ext)) {
+              if (["jpeg", "jpg", "png", "gif"].includes(ext)) {
                 imageExtension = ext;
               }
             } catch (error) {
