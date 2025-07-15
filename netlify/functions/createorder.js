@@ -26,7 +26,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { userId, items, address } = JSON.parse(event.body || '{}');
+    const { userId, items, address, paymentMethod } = JSON.parse(event.body || '{}');
 
     // Fetch packs and shirt types for price calculation
     const packs = await prisma.pack.findMany({ include: { items: true } });
@@ -53,6 +53,7 @@ exports.handler = async (event) => {
         address_telemovel: address.telemovel,
         total_price: finalPrice,
         proofReference: address.proofReference || null,
+        paymentMethod: paymentMethod || null,
         items: {
           create: items.map((item) => ({
             quantity: item.quantity,

@@ -36,6 +36,7 @@ model Order {
   total_price     Float       @default(0)
   items           OrderItem[]
   proofReference  String?     // Payment reference (nullable)
+  paymentMethod   String?     // Payment method: Revolut, PayPal, Bank Transfer
 
   @@map("orders") // This maps the Prisma model Order to the actual table "orders"
 }
