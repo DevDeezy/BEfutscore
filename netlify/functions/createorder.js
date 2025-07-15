@@ -54,6 +54,7 @@ exports.handler = async (event) => {
         total_price: finalPrice,
         proofReference: address.proofReference || null,
         paymentMethod: paymentMethod || null,
+        proofImage: address.proofImage || null,
         items: {
           create: items.map((item) => ({
             quantity: item.quantity,
