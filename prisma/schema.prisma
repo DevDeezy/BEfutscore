@@ -61,6 +61,7 @@ model OrderItem {
   numero        String?
   patch_images  String[]   // NEW: multiple patch images
   anuncios      Boolean?
+  cost_price    Float?
 
   @@map("orderitems")
 }
