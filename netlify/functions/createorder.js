@@ -69,6 +69,7 @@ exports.handler = async (event) => {
             ano: item.ano || null,
             numero: item.numero || null,
             patch_images: item.patch_images || [],
+            anuncios: typeof item.anuncios === 'boolean' ? item.anuncios : false,
           }))
         }
       }
