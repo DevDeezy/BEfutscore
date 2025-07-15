@@ -69,6 +69,7 @@ model Pack {
   id          Int        @id @default(autoincrement())
   name        String
   price       Float
+  cost_price  Float? @default(0)
   created_at  DateTime   @default(now())
   items       PackItem[]
 
@@ -91,6 +92,7 @@ model ShirtType {
   id         Int         @id @default(autoincrement())
   name       String      @unique
   price      Float
+  cost_price Float? @default(0)
   packItems  PackItem[]
   orderItems OrderItem[]
 
@@ -111,6 +113,7 @@ model Product {
   name            String
   description     String?
   price           Float
+  cost_price      Float? @default(0)
   image_url       String
   available_sizes String[]
   productType     ProductType @relation(fields: [product_type_id], references: [id])

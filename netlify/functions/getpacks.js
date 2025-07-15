@@ -34,7 +34,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers: corsHeaders,
-      body: JSON.stringify(packs),
+      body: JSON.stringify(packs), // cost_price is included by default
     };
   } catch (error) {
     console.error('Error in getpacks:', error);

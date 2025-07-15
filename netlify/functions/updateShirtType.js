@@ -17,14 +17,14 @@ exports.handler = async (event) => {
   }
   try {
     const id = parseInt(event.path.split('/').pop(), 10);
-    const { name, price } = JSON.parse(event.body);
+    const { name, price, cost_price } = JSON.parse(event.body);
     if (!name || typeof price !== 'number') {
       console.error('Invalid shirt type data:', { name, price });
       return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'Invalid data' }) };
     }
     const shirtType = await prisma.shirtType.update({
       where: { id },
-      data: { name, price },
+      data: { name, price, cost_price: typeof cost_price === 'number' ? cost_price : null },
     });
     console.log('Updated shirt type:', shirtType);
     return { statusCode: 200, headers: corsHeaders, body: JSON.stringify(shirtType) };

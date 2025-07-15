@@ -128,7 +128,8 @@ exports.handler = async (event) => {
       worksheet.getColumn(priceCol + 1).width = 10;
       
       worksheet.getCell(rowIndex, priceCol + 2).value = 'Total Apple';
-      worksheet.getCell(rowIndex, priceCol + 3).value = order.total_price;
+      // Use cost_price if available, otherwise fallback to total_price
+      worksheet.getCell(rowIndex, priceCol + 3).value = (order.items && order.items.reduce((sum, item) => sum + (item.cost_price || 0) * (item.quantity || 1), 0)) || order.total_price;
       worksheet.getColumn(priceCol + 2).width = 15;
       worksheet.getColumn(priceCol + 3).width = 10;
 

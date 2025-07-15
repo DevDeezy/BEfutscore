@@ -42,6 +42,7 @@ exports.handler = async (event) => {
       data: {
         name: pack.name,
         price: pack.price,
+        cost_price: typeof pack.cost_price === 'number' ? pack.cost_price : null,
         items: {
           create: pack.items.map(item => {
             const packItemData = {

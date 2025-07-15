@@ -30,7 +30,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers: corsHeaders,
-      body: JSON.stringify(products),
+      body: JSON.stringify(products), // cost_price is included by default
     };
   } catch (error) {
     console.error('Error fetching products:', error);

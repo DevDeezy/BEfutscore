@@ -17,7 +17,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { name, description, price, image_url, available_sizes, product_type_id, sexo, ano, numero } = JSON.parse(event.body);
+    const { name, description, price, image_url, available_sizes, product_type_id, sexo, ano, numero, cost_price } = JSON.parse(event.body);
 
     if (!name || !price || !image_url || !available_sizes || !product_type_id) {
       return { statusCode: 400, body: 'Missing required fields' };
@@ -28,6 +28,7 @@ exports.handler = async (event) => {
         name,
         description,
         price,
+        cost_price: typeof cost_price === 'number' ? cost_price : null,
         image_url,
         available_sizes,
         product_type_id,

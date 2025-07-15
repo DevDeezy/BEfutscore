@@ -16,12 +16,12 @@ exports.handler = async (event) => {
     return { statusCode: 405, headers: corsHeaders, body: 'Method Not Allowed' };
   }
   try {
-    const { name, price } = JSON.parse(event.body);
+    const { name, price, cost_price } = JSON.parse(event.body);
     if (!name || typeof price !== 'number') {
       console.error('Invalid shirt type data:', { name, price });
       return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'Invalid data' }) };
     }
-    const shirtType = await prisma.shirtType.create({ data: { name, price } });
+    const shirtType = await prisma.shirtType.create({ data: { name, price, cost_price: typeof cost_price === 'number' ? cost_price : null } });
     console.log('Created shirt type:', shirtType);
     return { statusCode: 201, headers: corsHeaders, body: JSON.stringify(shirtType) };
   } catch (error) {
