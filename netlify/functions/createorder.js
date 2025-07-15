@@ -58,7 +58,7 @@ exports.handler = async (event) => {
         items: {
           create: items.map((item) => ({
             quantity: item.quantity,
-            product_id: item.product_id || null,
+            product: item.product_id ? { connect: { id: item.product_id } } : undefined,
             product_type: item.product_type,
             image_front: item.image_front || '',
             image_back: item.image_back || '',
