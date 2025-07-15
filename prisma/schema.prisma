@@ -37,6 +37,7 @@ model Order {
   items           OrderItem[]
   proofReference  String?     // Payment reference (nullable)
   paymentMethod   String?     // Payment method: Revolut, PayPal, Bank Transfer
+  proofImage      String? 
 
   @@map("orders") // This maps the Prisma model Order to the actual table "orders"
 }
