@@ -60,6 +60,7 @@ model OrderItem {
   ano           String?
   numero        String?
   patch_images  String[]   // NEW: multiple patch images
+  anuncios      Boolean?
 
   @@map("orderitems")
 }
