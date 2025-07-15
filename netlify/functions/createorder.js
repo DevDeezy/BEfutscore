@@ -64,7 +64,7 @@ exports.handler = async (event) => {
             image_back: item.image_back || '',
             size: item.size,
             player_name: item.player_name,
-            shirt_type_id: item.shirt_type_id || null,
+            shirtType: item.shirt_type_id ? { connect: { id: item.shirt_type_id } } : undefined,
             sexo: item.sexo || null,
             ano: item.ano || null,
             numero: item.numero || null,
