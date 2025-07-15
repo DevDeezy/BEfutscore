@@ -40,6 +40,10 @@ exports.handler = async (event) => {
     );
     const finalPrice = calculateOrderPrice(expandedItems, packs, shirtTypes, shoePrice);
 
+    // Fetch all products and shirt types for cost lookup
+    const allProducts = await prisma.product.findMany();
+    const allShirtTypes = await prisma.shirtType.findMany();
+
     const order = await prisma.order.create({
       data: {
         user_id: Number(userId),
@@ -56,21 +60,32 @@ exports.handler = async (event) => {
         paymentMethod: paymentMethod || null,
         proofImage: address.proofImage || null,
         items: {
-          create: items.map((item) => ({
-            quantity: item.quantity,
-            product: item.product_id ? { connect: { id: item.product_id } } : undefined,
-            product_type: item.product_type,
-            image_front: item.image_front || '',
-            image_back: item.image_back || '',
-            size: item.size,
-            player_name: item.player_name,
-            shirtType: item.shirt_type_id ? { connect: { id: item.shirt_type_id } } : undefined,
-            sexo: item.sexo || null,
-            ano: item.ano || null,
-            numero: item.numero || null,
-            patch_images: item.patch_images || [],
-            anuncios: typeof item.anuncios === 'boolean' ? item.anuncios : false,
-          }))
+          create: items.map((item) => {
+            let cost_price = 0;
+            if (item.product_id) {
+              const prod = allProducts.find(p => p.id === item.product_id);
+              cost_price = prod && typeof prod.cost_price === 'number' ? prod.cost_price : 0;
+            } else if (item.shirt_type_id) {
+              const st = allShirtTypes.find(s => s.id === item.shirt_type_id);
+              cost_price = st && typeof st.cost_price === 'number' ? st.cost_price : 0;
+            }
+            return {
+              quantity: item.quantity,
+              product: item.product_id ? { connect: { id: item.product_id } } : undefined,
+              product_type: item.product_type,
+              image_front: item.image_front || '',
+              image_back: item.image_back || '',
+              size: item.size,
+              player_name: item.player_name,
+              shirtType: item.shirt_type_id ? { connect: { id: item.shirt_type_id } } : undefined,
+              sexo: item.sexo || null,
+              ano: item.ano || null,
+              numero: item.numero || null,
+              patch_images: item.patch_images || [],
+              anuncios: typeof item.anuncios === 'boolean' ? item.anuncios : false,
+              cost_price,
+            };
+          })
         }
       }
     });
