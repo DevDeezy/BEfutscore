@@ -53,12 +53,14 @@ exports.handler = async (event) => {
         email: data.email,
         password: hashedPassword,
         role: data.role || 'user',
+        instagramName: data.instagramName || null,
       },
       select: {
         id: true,
         email: true,
         role: true,
         created_at: true,
+        instagramName: true,
       }
     });
     return {

@@ -29,7 +29,13 @@ exports.handler = async (event) => {
       where: whereClause,
       include: {
         items: true,
-        user: true, // if you have a relation set up
+        user: {
+          select: {
+            id: true,
+            email: true,
+            instagramName: true,
+          },
+        },
       },
       orderBy: { created_at: 'desc' }
     });

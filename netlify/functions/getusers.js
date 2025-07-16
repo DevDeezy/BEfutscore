@@ -31,6 +31,7 @@ exports.handler = async (event) => {
         email: true,
         role: true,
         created_at: true,
+        instagramName: true,
       }
     });
     return {

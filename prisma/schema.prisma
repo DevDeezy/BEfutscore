@@ -16,6 +16,7 @@ model User {
   created_at DateTime @default(now())
   orders    Order[]
   addresses Address[]
+  instagramName String? // Instagram name, optional
   
   @@map("users") // This maps the Prisma model User to the actual table "users"
 }
