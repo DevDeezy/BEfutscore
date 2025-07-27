@@ -85,6 +85,22 @@ exports.handler = async (event) => {
             }
           }
 
+          // Build comprehensive description including all customizations
+          let descriptionParts = [];
+          if (item.size) descriptionParts.push(item.size);
+          if (item.player_name && String(item.player_name).trim() !== '') descriptionParts.push(`Nome: ${item.player_name}`);
+          if (item.numero && String(item.numero).trim() !== '') descriptionParts.push(`Número: ${item.numero}`);
+          if (item.quantity && item.quantity > 1) descriptionParts.push(`Qty: ${item.quantity}`);
+          
+          const description = descriptionParts.join(' | ');
+          
+          // Put description in the column before the image
+          const descriptionCell = worksheet.getCell(rowIndex, colIndex);
+          descriptionCell.value = description;
+          descriptionCell.alignment = { horizontal: 'center', vertical: 'middle' };
+          worksheet.getColumn(colIndex).width = 20;
+          colIndex++;
+
           if (imageBuffer) {
             const imageId = workbook.addImage({
               buffer: imageBuffer,
@@ -97,18 +113,6 @@ exports.handler = async (event) => {
           }
           
           worksheet.getColumn(colIndex).width = 15;
-          
-          // Build comprehensive description including all customizations
-          let descriptionParts = [];
-          if (item.size) descriptionParts.push(item.size);
-          if (item.player_name && String(item.player_name).trim() !== '') descriptionParts.push(`Nome: ${item.player_name}`);
-          if (item.numero && String(item.numero).trim() !== '') descriptionParts.push(`Número: ${item.numero}`);
-          if (item.quantity && item.quantity > 1) descriptionParts.push(`Qty: ${item.quantity}`);
-          
-          const description = descriptionParts.join(' | ');
-          const cell = worksheet.getCell(rowIndex + 1, colIndex);
-          cell.value = description;
-          cell.alignment = { horizontal: 'center' };
           colIndex++;
 
           // Add patch images if they exist
