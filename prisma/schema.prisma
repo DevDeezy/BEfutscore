@@ -16,6 +16,7 @@ model User {
   created_at DateTime @default(now())
   orders    Order[]
   addresses Address[]
+  notifications Notification[]
   instagramName String? // Instagram name, optional
   
   @@map("users") // This maps the Prisma model User to the actual table "users"
@@ -139,4 +140,18 @@ model Address {
   distrito     String
   codigoPostal String
   pais         String  @default("Portugal")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  type      String   // 'payment_reminder', 'order_update', 'general'
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  orderId   String?
+  created_at DateTime @default(now())
+  
+  @@map("notifications")
 }

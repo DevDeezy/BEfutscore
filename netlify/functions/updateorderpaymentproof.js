@@ -2,7 +2,6 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 exports.handler = async (event) => {
-  // CORS
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
@@ -24,41 +23,49 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Accept orderId from path or body
-    let orderId;
-    if (event.path && event.path.split('/').length > 0) {
-      orderId = event.path.split('/').pop();
-    }
-    const body = JSON.parse(event.body || '{}');
-    if (body.orderId) orderId = body.orderId;
-    const { status } = body;
-    if (!orderId || !status) {
+    const orderId = event.path.split('/').pop();
+    const { proofReference, proofImage, paymentMethod } = JSON.parse(event.body || '{}');
+    
+    if (!orderId) {
       return {
         statusCode: 400,
         headers: { 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({ error: 'orderId and status are required' }),
+        body: JSON.stringify({ error: 'orderId is required' }),
       };
     }
-    // Update order status
-    const order = await prisma.order.update({
-      where: { id: Number(orderId) },
-      data: { status },
-      include: { items: true, user: true },
+
+    // Check if order exists and is in "Em pagamento" status
+    const existingOrder = await prisma.order.findUnique({
+      where: { id: Number(orderId) }
     });
 
-    // Create notification if status is changed to "Em pagamento"
-    if (status === 'Em pagamento') {
-      await prisma.notification.create({
-        data: {
-          userId: order.user_id,
-          type: 'payment_reminder',
-          title: 'Pagamento Pendente',
-          message: `A sua encomenda #${order.id} está aguardando pagamento. Por favor, adicione a prova de pagamento para continuar.`,
-          orderId: order.id.toString(),
-        }
-      });
+    if (!existingOrder) {
+      return {
+        statusCode: 404,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ error: 'Order not found' }),
+      };
     }
 
+    if (existingOrder.status !== 'Em pagamento') {
+      return {
+        statusCode: 400,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ error: 'Can only update payment proof for orders in "Em pagamento" status' }),
+      };
+    }
+
+    // Update order with payment proof
+    const order = await prisma.order.update({
+      where: { id: Number(orderId) },
+      data: {
+        proofReference: proofReference || null,
+        proofImage: proofImage || null,
+        paymentMethod: paymentMethod || null,
+      },
+      include: { items: true, user: true },
+    });
+    
     return {
       statusCode: 200,
       headers: { 'Access-Control-Allow-Origin': '*' },

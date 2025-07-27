@@ -17,17 +17,25 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
 
   // Helper: count items by type and shirt_type_id
   const itemCounts = {};
+  const extraCharges = {};
   for (const item of orderItems) {
     const key = item.product_id 
       ? `product_${item.product_id}_${item.size}` // Unique key for catalog products
       : item.product_type === 'tshirt'
       ? `tshirt_${item.shirt_type_id}`
       : `shoes`; // Fallback for old shoe logic if any
-    
+
     if (!itemCounts[key]) {
       itemCounts[key] = { count: 0, price: item.price || 0 };
+      extraCharges[key] = { patches: 0, number: 0, name: 0 };
     }
     itemCounts[key].count += 1;
+    // Add extra charges for t-shirts
+    if (item.product_type === 'tshirt') {
+      extraCharges[key].patches += Array.isArray(item.patch_images) ? item.patch_images.length : 0;
+      if (item.numero && String(item.numero).trim() !== '') extraCharges[key].number += 1;
+      if (item.player_name && String(item.player_name).trim() !== '') extraCharges[key].name += 1;
+    }
   }
 
   // Use an iterative approach to avoid stack overflow
@@ -69,7 +77,14 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
         if (counts[key].count > 0) {
           if (key.startsWith('tshirt_')) {
             const shirtTypeId = parseInt(key.split('_')[1], 10);
-            rest += counts[key].count * getShirtPrice(shirtTypeId);
+            // Base price
+            let base = counts[key].count * getShirtPrice(shirtTypeId);
+            // Add extras
+            const extras = extraCharges[key] || { patches: 0, number: 0, name: 0 };
+            base += extras.patches * PATCH_PRICE;
+            base += extras.number * NUMBER_PRICE;
+            base += extras.name * NAME_PRICE;
+            rest += base;
           } else if (key === 'shoes') { // Old logic fallback
             rest += counts[key].count * shoePrice;
           } else if (key.startsWith('product_')) {
@@ -84,6 +99,11 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
 
   return minPrice === Infinity ? 0 : minPrice;
 }
+
+// Extra charges for t-shirt customizations
+const PATCH_PRICE = 2; // €2 per patch
+const NUMBER_PRICE = 3; // €3 for number
+const NAME_PRICE = 3; // €3 for name
 
 // Netlify function handler
 const corsHeaders = {

@@ -44,10 +44,17 @@ exports.handler = async (event) => {
     const allProducts = await prisma.product.findMany();
     const allShirtTypes = await prisma.shirtType.findMany();
 
+    // Determine order status based on payment proof
+    const proofReference = address.proofReference || null;
+    const proofImage = address.proofImage || null;
+    const hasPaymentProof = proofReference && proofReference.trim() !== '' || proofImage;
+    
+    const orderStatus = hasPaymentProof ? 'pending' : 'Para analizar';
+
     const order = await prisma.order.create({
       data: {
         user_id: Number(userId),
-        status: 'pending',
+        status: orderStatus,
         address_nome: address.nome,
         address_morada: address.morada,
         address_cidade: address.cidade,
@@ -56,9 +63,9 @@ exports.handler = async (event) => {
         address_codigo_postal: address.codigoPostal,
         address_telemovel: address.telemovel,
         total_price: finalPrice,
-        proofReference: address.proofReference || null,
+        proofReference: proofReference,
         paymentMethod: paymentMethod || null,
-        proofImage: address.proofImage || null,
+        proofImage: proofImage,
         items: {
           create: items.map((item) => {
             let cost_price = 0;
