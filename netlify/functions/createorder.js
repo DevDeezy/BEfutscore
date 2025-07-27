@@ -44,12 +44,13 @@ exports.handler = async (event) => {
     const allProducts = await prisma.product.findMany();
     const allShirtTypes = await prisma.shirtType.findMany();
 
-    // Determine order status based on payment proof
+    // Determine order status based on payment proof (now optional)
     const proofReference = address.proofReference || null;
     const proofImage = address.proofImage || null;
     const hasPaymentProof = proofReference && proofReference.trim() !== '' || proofImage;
     
-    const orderStatus = hasPaymentProof ? 'pending' : 'Para analizar';
+    // Since payment proof is now optional, all orders start as 'pending'
+    const orderStatus = 'pending';
 
     const order = await prisma.order.create({
       data: {

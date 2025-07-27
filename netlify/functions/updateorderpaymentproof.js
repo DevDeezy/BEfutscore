@@ -47,11 +47,12 @@ exports.handler = async (event) => {
       };
     }
 
-    if (existingOrder.status !== 'Em pagamento') {
+    // Allow updating payment proof for orders in "Em pagamento" or "pending" status
+    if (existingOrder.status !== 'Em pagamento' && existingOrder.status !== 'pending') {
       return {
         statusCode: 400,
         headers: { 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({ error: 'Can only update payment proof for orders in "Em pagamento" status' }),
+        body: JSON.stringify({ error: 'Can only update payment proof for orders in "Em pagamento" or "pending" status' }),
       };
     }
 
