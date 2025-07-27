@@ -100,10 +100,36 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
   return minPrice === Infinity ? 0 : minPrice;
 }
 
-// Extra charges for t-shirt customizations
-const PATCH_PRICE = 2; // €2 per patch
-const NUMBER_PRICE = 3; // €3 for number
-const NAME_PRICE = 3; // €3 for name
+// Default extra charges for t-shirt customizations (fallback values)
+let PATCH_PRICE = 2; // €2 per patch
+let NUMBER_PRICE = 3; // €3 for number
+let NAME_PRICE = 3; // €3 for name
+
+// Function to load pricing values from database
+async function loadPricingValues() {
+  try {
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+    
+    const configs = await prisma.pricingConfig.findMany();
+    configs.forEach(config => {
+      switch (config.key) {
+        case 'patch_price':
+          PATCH_PRICE = config.price;
+          break;
+        case 'number_price':
+          NUMBER_PRICE = config.price;
+          break;
+        case 'name_price':
+          NAME_PRICE = config.price;
+          break;
+      }
+    });
+  } catch (error) {
+    console.error('Error loading pricing values:', error);
+    // Keep default values if loading fails
+  }
+}
 
 // Netlify function handler
 const corsHeaders = {
@@ -123,6 +149,9 @@ exports.handler = async (event) => {
     return { statusCode: 405, headers: corsHeaders, body: 'Method Not Allowed' };
   }
   try {
+    // Load pricing values from database
+    await loadPricingValues();
+    
     const { items } = JSON.parse(event.body || '{}');
     const packs = await prisma.pack.findMany({ include: { items: true } });
     const shirtTypes = await prisma.shirtType.findMany();

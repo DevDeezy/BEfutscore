@@ -155,3 +155,16 @@ model Notification {
   
   @@map("notifications")
 }
+
+model PricingConfig {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  name        String
+  price       Float    @default(0)
+  cost_price  Float    @default(0)
+  description String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  
+  @@map("pricing_config")
+}

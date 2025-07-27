@@ -97,7 +97,18 @@ exports.handler = async (event) => {
           }
           
           worksheet.getColumn(colIndex).width = 15;
-          const description = `${item.size || ''} ${item.player_name ? `#${item.player_name}` : ''}`.trim();
+          
+          // Build comprehensive description including all customizations
+          let descriptionParts = [];
+          if (item.size) descriptionParts.push(item.size);
+          if (item.player_name && String(item.player_name).trim() !== '') descriptionParts.push(`Nome: ${item.player_name}`);
+          if (item.numero && String(item.numero).trim() !== '') descriptionParts.push(`Número: ${item.numero}`);
+          if (item.patch_images && Array.isArray(item.patch_images) && item.patch_images.length > 0) {
+            descriptionParts.push(`Patches: ${item.patch_images.length}`);
+          }
+          if (item.quantity && item.quantity > 1) descriptionParts.push(`Qty: ${item.quantity}`);
+          
+          const description = descriptionParts.join(' | ');
           const cell = worksheet.getCell(rowIndex + 1, colIndex);
           cell.value = description;
           cell.alignment = { horizontal: 'center' };
@@ -128,8 +139,61 @@ exports.handler = async (event) => {
       worksheet.getColumn(priceCol + 1).width = 10;
       
       worksheet.getCell(rowIndex, priceCol + 2).value = 'Total Apple';
-      // Use cost_price if available, otherwise fallback to total_price
-      worksheet.getCell(rowIndex, priceCol + 3).value = (order.items && order.items.reduce((sum, item) => sum + (item.cost_price || 0) * (item.quantity || 1), 0)) || order.total_price;
+      
+      // Calculate total cost including patches, names, and numbers
+      let totalCost = 0;
+      if (order.items) {
+        // Get pricing values from database
+        let patchPrice = 2; // Default fallback
+        let numberPrice = 3; // Default fallback
+        let namePrice = 3; // Default fallback
+        
+        try {
+          const pricingConfigs = await prisma.pricingConfig.findMany();
+          pricingConfigs.forEach(config => {
+            switch (config.key) {
+              case 'patch_price':
+                patchPrice = config.cost_price;
+                break;
+              case 'number_price':
+                numberPrice = config.cost_price;
+                break;
+              case 'name_price':
+                namePrice = config.cost_price;
+                break;
+            }
+          });
+        } catch (error) {
+          console.error('Error loading pricing config:', error);
+          // Use default values if loading fails
+        }
+        
+        for (const item of order.items) {
+          let itemCost = (item.cost_price || 0) * (item.quantity || 1);
+          
+          // Add extra charges for t-shirts
+          if (item.product_type === 'tshirt') {
+            // Add patch costs
+            if (item.patch_images && Array.isArray(item.patch_images)) {
+              itemCost += item.patch_images.length * patchPrice * (item.quantity || 1);
+            }
+            
+            // Add number cost
+            if (item.numero && String(item.numero).trim() !== '') {
+              itemCost += numberPrice * (item.quantity || 1);
+            }
+            
+            // Add name cost
+            if (item.player_name && String(item.player_name).trim() !== '') {
+              itemCost += namePrice * (item.quantity || 1);
+            }
+          }
+          
+          totalCost += itemCost;
+        }
+      }
+      
+      worksheet.getCell(rowIndex, priceCol + 3).value = totalCost || order.total_price;
       worksheet.getColumn(priceCol + 2).width = 15;
       worksheet.getColumn(priceCol + 3).width = 10;
 
