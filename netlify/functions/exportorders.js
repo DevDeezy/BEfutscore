@@ -103,9 +103,6 @@ exports.handler = async (event) => {
           if (item.size) descriptionParts.push(item.size);
           if (item.player_name && String(item.player_name).trim() !== '') descriptionParts.push(`Nome: ${item.player_name}`);
           if (item.numero && String(item.numero).trim() !== '') descriptionParts.push(`Número: ${item.numero}`);
-          if (item.patch_images && Array.isArray(item.patch_images) && item.patch_images.length > 0) {
-            descriptionParts.push(`Patches: ${item.patch_images.length}`);
-          }
           if (item.quantity && item.quantity > 1) descriptionParts.push(`Qty: ${item.quantity}`);
           
           const description = descriptionParts.join(' | ');
@@ -113,6 +110,53 @@ exports.handler = async (event) => {
           cell.value = description;
           cell.alignment = { horizontal: 'center' };
           colIndex++;
+
+          // Add patch images if they exist
+          if (item.patch_images && Array.isArray(item.patch_images) && item.patch_images.length > 0) {
+            for (let patchIndex = 0; patchIndex < item.patch_images.length; patchIndex++) {
+              const patchImage = item.patch_images[patchIndex];
+              let patchImageBuffer;
+              let patchImageExtension = 'jpeg';
+
+              if (patchImage && patchImage.startsWith('data:image')) {
+                // Handle base64 encoded images
+                patchImageExtension = patchImage.substring(patchImage.indexOf('/') + 1, patchImage.indexOf(';'));
+                const base64 = patchImage.split(',')[1];
+                if (base64) {
+                  patchImageBuffer = Buffer.from(base64, 'base64');
+                }
+              } else if (patchImage && patchImage.startsWith('http')) {
+                // Handle URL images using fetch
+                try {
+                  const response = await fetch(patchImage);
+                  if (!response.ok) throw new Error(`Failed to fetch patch image: ${response.status}`);
+                  const arrayBuffer = await response.arrayBuffer();
+                  patchImageBuffer = Buffer.from(arrayBuffer);
+                  // Try to get extension from URL
+                  const urlPath = new URL(patchImage).pathname;
+                  const ext = urlPath.split('.').pop();
+                  if (["jpeg", "jpg", "png", "gif"].includes(ext)) {
+                    patchImageExtension = ext;
+                  }
+                } catch (error) {
+                  console.error(`Failed to download patch image from ${patchImage}`, error);
+                  continue; // Skip this patch image if it fails
+                }
+              }
+
+              if (patchImageBuffer) {
+                const patchImageId = workbook.addImage({
+                  buffer: patchImageBuffer,
+                  extension: patchImageExtension,
+                });
+                worksheet.addImage(patchImageId, {
+                  tl: { col: colIndex - 1, row: rowIndex - 1 },
+                  ext: { width: 50, height: 40 } // Smaller size for patch images
+                });
+                colIndex++;
+              }
+            }
+          }
         }
       }
 
