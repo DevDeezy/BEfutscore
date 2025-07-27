@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const axios = require('axios');
 const prisma = new PrismaClient();
 
 exports.handler = async (event) => {
@@ -46,7 +47,7 @@ exports.handler = async (event) => {
       include: { items: true, user: true },
     });
 
-    // Create notification if status is changed to "Em pagamento"
+    // Create notification and send email if status is changed to "Em pagamento"
     if (status === 'Em pagamento') {
       await prisma.notification.create({
         data: {
@@ -57,6 +58,53 @@ exports.handler = async (event) => {
           orderId: order.id.toString(),
         }
       });
+
+      // Send email notification
+      try {
+        const user = await prisma.user.findUnique({
+          where: { id: order.user_id }
+        });
+
+        if (user && (user.email || user.userEmail)) {
+          const emailToUse = user.userEmail || user.email;
+          
+          // Prepare email template parameters
+          const templateParams = {
+            order_id: order.id.toString(),
+            email: emailToUse,
+            total_price: order.total_price ? `€${order.total_price.toFixed(2)}` : '€0.00',
+            // Add order items for the email template
+            orders: order.items.map(item => ({
+              name: item.product_type === 'tshirt' ? 'Camisola Personalizada' : 'Sapatilhas',
+              units: item.quantity || 1,
+              price: item.price ? `€${item.price.toFixed(2)}` : '€0.00'
+            })),
+            cost: {
+              shipping: '€0.00', // Assuming no shipping cost for now
+              total: order.total_price ? `€${order.total_price.toFixed(2)}` : '€0.00'
+            }
+          };
+
+          // Send email using EmailJS
+          await axios.post(
+            `https://api.emailjs.com/api/v1.0/email/send`,
+            {
+              service_id: 'service_pvd829d',
+              template_id: 'template_omc5g2b',
+              user_id: 'sYfnZeIDOxAl4y-r9',
+              template_params: templateParams,
+            },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+        }
+      } catch (emailError) {
+        console.error('Error sending email:', emailError);
+        // Don't fail the entire request if email fails
+      }
     }
 
     return {
