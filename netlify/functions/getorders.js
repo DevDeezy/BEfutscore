@@ -24,9 +24,10 @@ exports.handler = async (event) => {
 
   try {
     const userId = event.queryStringParameters.userId;
-    const whereClause = userId ? { user_id: parseInt(userId, 10) } : {};
-    const orders = await prisma.order.findMany({
-      where: whereClause,
+    const orderId = event.queryStringParameters.orderId;
+    
+    let whereClause = {};
+    let queryOptions = {
       include: {
         items: true,
         user: {
@@ -38,12 +39,43 @@ exports.handler = async (event) => {
         },
       },
       orderBy: { created_at: 'desc' }
-    });
-    return {
-      statusCode: 200,
-      headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify(orders),
     };
+
+    if (orderId) {
+      // Fetch specific order by ID
+      whereClause = { id: parseInt(orderId, 10) };
+      const order = await prisma.order.findFirst({
+        where: whereClause,
+        include: queryOptions.include,
+      });
+      
+      if (!order) {
+        return {
+          statusCode: 404,
+          headers: { 'Access-Control-Allow-Origin': '*' },
+          body: JSON.stringify({ error: 'Order not found' }),
+        };
+      }
+      
+      return {
+        statusCode: 200,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify([order]),
+      };
+    } else {
+      // Fetch orders by user ID or all orders
+      whereClause = userId ? { user_id: parseInt(userId, 10) } : {};
+      const orders = await prisma.order.findMany({
+        where: whereClause,
+        ...queryOptions,
+      });
+      
+      return {
+        statusCode: 200,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify(orders),
+      };
+    }
   } catch (err) {
     return {
       statusCode: 400,
