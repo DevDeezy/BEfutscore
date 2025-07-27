@@ -87,17 +87,17 @@ exports.handler = async (event) => {
 
           // Build comprehensive description including all customizations
           let descriptionParts = [];
-          if (item.size) descriptionParts.push(item.size);
+          if (item.size) descriptionParts.push(`Tamanho: ${item.size}`);
           if (item.player_name && String(item.player_name).trim() !== '') descriptionParts.push(`Nome: ${item.player_name}`);
           if (item.numero && String(item.numero).trim() !== '') descriptionParts.push(`Número: ${item.numero}`);
-          if (item.quantity && item.quantity > 1) descriptionParts.push(`Qty: ${item.quantity}`);
+          if (item.quantity && item.quantity > 1) descriptionParts.push(`Quantidade: ${item.quantity}`);
           
-          const description = descriptionParts.join(' | ');
+          const description = descriptionParts.join('\n');
           
           // Put description in the column before the image
           const descriptionCell = worksheet.getCell(rowIndex, colIndex);
           descriptionCell.value = description;
-          descriptionCell.alignment = { horizontal: 'center', vertical: 'middle' };
+          descriptionCell.alignment = { wrapText: true, vertical: 'top' };
           worksheet.getColumn(colIndex).width = 20;
           colIndex++;
 
