@@ -47,7 +47,7 @@ exports.handler = async (event) => {
       include: { items: true, user: true },
     });
 
-    // Create notification and send email if status is changed to "Em pagamento"
+        // Create notification if status is changed to "Em pagamento"
     if (status === 'Em pagamento') {
       await prisma.notification.create({
         data: {
@@ -58,64 +58,6 @@ exports.handler = async (event) => {
           orderId: order.id.toString(),
         }
       });
-
-      // Send email notification
-      try {
-        const user = await prisma.user.findUnique({
-          where: { id: order.user_id }
-        });
-
-        if (user && (user.email || user.userEmail)) {
-          const emailToUse = user.userEmail || user.email;
-          
-          console.log(`Attempting to send email to: ${emailToUse} for order: ${order.id}`);
-          
-          // Prepare email template parameters
-          const templateParams = {
-            order_id: order.id.toString(),
-            email: emailToUse,
-            // Add order items for the email template
-            orders: order.items.map(item => ({
-              name: item.product_type === 'tshirt' ? 'Camisola Personalizada' : 'Sapatilhas',
-              units: item.quantity || 1,
-              price: item.price ? `$${item.price.toFixed(2)}` : '$0.00',
-              image_url: 'https://via.placeholder.com/64x64?text=Item' // Placeholder image
-            })),
-            cost: {
-              shipping: '$0.00', // Assuming no shipping cost for now
-              total: order.total_price ? `$${order.total_price.toFixed(2)}` : '$0.00'
-            }
-          };
-
-          console.log('Email template parameters:', JSON.stringify(templateParams, null, 2));
-
-                    // Send email using EmailJS
-          const emailResponse = await axios.post(
-            `https://api.emailjs.com/api/v1.0/email/send`,
-            {
-              service_id: 'service_pvd829d',
-              template_id: 'template_omc5g2b',
-              user_id: 'sYfnZeIDOxAl4y-r9',
-              template_params: templateParams,
-            },
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.EMAILJS_PRIVATE_KEY}`,
-              },
-            }
-          );
-          
-          console.log('Email sent successfully:', emailResponse.data);
-        } else {
-          console.log('No user email found for order:', order.id);
-        }
-      } catch (emailError) {
-        console.error('Error sending email:', emailError);
-        console.error('Error response:', emailError.response?.data);
-        console.error('Error status:', emailError.response?.status);
-        // Don't fail the entire request if email fails
-      }
     }
 
     return {
