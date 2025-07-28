@@ -96,7 +96,7 @@ exports.handler = async (event) => {
               service_id: 'service_pvd829d',
               template_id: 'template_omc5g2b',
               user_id: 'sYfnZeIDOxAl4y-r9',
-              accessToken: 'TUXGHL8UvpTfOChwiWpYI', 
+              accessToken: process.env.EMAILJS_PRIVATE_KEY, 
               template_params: templateParams,
             },
             {
