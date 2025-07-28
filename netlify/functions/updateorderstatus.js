@@ -47,8 +47,8 @@ exports.handler = async (event) => {
       include: { items: true, user: true },
     });
 
-    // Create notification and send email if status is changed to "Em Pagamento"
-    if (status === 'Em Pagamento') {
+    // Create notification and send email if status is changed to "Em pagamento"
+    if (status === 'Em pagamento') {
       await prisma.notification.create({
         data: {
           userId: order.user_id,
@@ -74,16 +74,16 @@ exports.handler = async (event) => {
           const templateParams = {
             order_id: order.id.toString(),
             email: emailToUse,
-            total_price: order.total_price ? `€${order.total_price.toFixed(2)}` : '€0.00',
             // Add order items for the email template
             orders: order.items.map(item => ({
               name: item.product_type === 'tshirt' ? 'Camisola Personalizada' : 'Sapatilhas',
               units: item.quantity || 1,
-              price: item.price ? `€${item.price.toFixed(2)}` : '€0.00'
+              price: item.price ? `$${item.price.toFixed(2)}` : '$0.00',
+              image_url: 'https://via.placeholder.com/64x64?text=Item' // Placeholder image
             })),
             cost: {
-              shipping: '€0.00', // Assuming no shipping cost for now
-              total: order.total_price ? `€${order.total_price.toFixed(2)}` : '€0.00'
+              shipping: '$0.00', // Assuming no shipping cost for now
+              total: order.total_price ? `$${order.total_price.toFixed(2)}` : '$0.00'
             }
           };
 
