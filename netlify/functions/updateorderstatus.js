@@ -47,8 +47,8 @@ exports.handler = async (event) => {
       include: { items: true, user: true },
     });
 
-    // Create notification and send email if status is changed to "Em pagamento"
-    if (status === 'Em pagamento') {
+    // Create notification and send email if status is changed to "Em Pagamento"
+    if (status === 'Em Pagamento') {
       await prisma.notification.create({
         data: {
           userId: order.user_id,
@@ -68,6 +68,8 @@ exports.handler = async (event) => {
         if (user && (user.email || user.userEmail)) {
           const emailToUse = user.userEmail || user.email;
           
+          console.log(`Attempting to send email to: ${emailToUse} for order: ${order.id}`);
+          
           // Prepare email template parameters
           const templateParams = {
             order_id: order.id.toString(),
@@ -85,8 +87,10 @@ exports.handler = async (event) => {
             }
           };
 
+          console.log('Email template parameters:', JSON.stringify(templateParams, null, 2));
+
           // Send email using EmailJS
-          await axios.post(
+          const emailResponse = await axios.post(
             `https://api.emailjs.com/api/v1.0/email/send`,
             {
               service_id: 'service_pvd829d',
@@ -100,6 +104,10 @@ exports.handler = async (event) => {
               },
             }
           );
+          
+          console.log('Email sent successfully:', emailResponse.data);
+        } else {
+          console.log('No user email found for order:', order.id);
         }
       } catch (emailError) {
         console.error('Error sending email:', emailError);
