@@ -89,19 +89,19 @@ exports.handler = async (event) => {
 
           console.log('Email template parameters:', JSON.stringify(templateParams, null, 2));
 
-          // Send email using EmailJS
+                    // Send email using EmailJS
           const emailResponse = await axios.post(
             `https://api.emailjs.com/api/v1.0/email/send`,
             {
               service_id: 'service_pvd829d',
               template_id: 'template_omc5g2b',
               user_id: 'sYfnZeIDOxAl4y-r9',
-              accessToken: process.env.EMAILJS_PRIVATE_KEY, 
               template_params: templateParams,
             },
             {
               headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.EMAILJS_PRIVATE_KEY}`,
               },
             }
           );
@@ -112,6 +112,8 @@ exports.handler = async (event) => {
         }
       } catch (emailError) {
         console.error('Error sending email:', emailError);
+        console.error('Error response:', emailError.response?.data);
+        console.error('Error status:', emailError.response?.status);
         // Don't fail the entire request if email fails
       }
     }
