@@ -17,7 +17,8 @@ model User {
   orders    Order[]
   addresses Address[]
   notifications Notification[]
-  instagramName String? // Instagram name, optional
+  instagramName String? // Instagram name, optional (for backward compatibility)
+  instagramNames String? // Multiple Instagram names as JSON string
   userEmail String? // User email for notifications, optional
   
   @@map("users") // This maps the Prisma model User to the actual table "users"

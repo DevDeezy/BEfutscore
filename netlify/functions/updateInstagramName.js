@@ -32,11 +32,20 @@ exports.handler = async (event) => {
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.id;
-    const { instagramName } = JSON.parse(event.body || '{}');
+    const { instagramName, instagramNames } = JSON.parse(event.body || '{}');
+    
+    // Handle both single instagramName (backward compatibility) and multiple instagramNames
+    let updateData = {};
+    if (instagramNames) {
+      updateData.instagramNames = instagramNames;
+    } else if (instagramName) {
+      updateData.instagramName = instagramName;
+    }
+    
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: { instagramName },
-      select: { id: true, email: true, instagramName: true },
+      data: updateData,
+      select: { id: true, email: true, instagramName: true, instagramNames: true },
     });
     return {
       statusCode: 200,
