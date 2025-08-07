@@ -170,3 +170,15 @@ model PricingConfig {
   
   @@map("pricing_config")
 }
+
+model Patch {
+  id        Int      @id @default(autoincrement())
+  name      String
+  image     String
+  price     Float?   @default(0)
+  active    Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("patches")
+}
