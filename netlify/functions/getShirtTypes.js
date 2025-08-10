@@ -16,9 +16,34 @@ exports.handler = async (event) => {
     return { statusCode: 405, headers: corsHeaders, body: 'Method Not Allowed' };
   }
   try {
-    const types = await prisma.shirtType.findMany();
+    const page = parseInt(event.queryStringParameters?.page) || 1;
+    const limit = parseInt(event.queryStringParameters?.limit) || 20;
+    const skip = (page - 1) * limit;
+    
+    // Get total count for pagination
+    const totalCount = await prisma.shirtType.count();
+    
+    const types = await prisma.shirtType.findMany({
+      skip,
+      take: limit,
+      orderBy: { id: 'desc' }
+    });
     console.log('Fetched shirt types:', types);
-    return { statusCode: 200, headers: corsHeaders, body: JSON.stringify(types) };
+    return { 
+      statusCode: 200, 
+      headers: corsHeaders, 
+      body: JSON.stringify({
+        shirtTypes: types,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(totalCount / limit),
+          totalCount,
+          limit,
+          hasNextPage: page < Math.ceil(totalCount / limit),
+          hasPreviousPage: page > 1
+        }
+      }) 
+    };
   } catch (error) {
     console.error('Error in getShirtTypes:', error);
     return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: 'Failed to fetch shirt types', details: error.message, stack: error.stack }) };

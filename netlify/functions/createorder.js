@@ -26,7 +26,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { userId, items, address, paymentMethod } = JSON.parse(event.body || '{}');
+    const { userId, items, address, paymentMethod, clientInstagram } = JSON.parse(event.body || '{}');
 
     // Fetch packs and shirt types for price calculation
     const packs = await prisma.pack.findMany({ include: { items: true } });
@@ -44,13 +44,35 @@ exports.handler = async (event) => {
     const allProducts = await prisma.product.findMany();
     const allShirtTypes = await prisma.shirtType.findMany();
 
-    // Determine order status based on payment proof
+    // Determine order status based on payment proof and order type
     const proofReference = address.proofReference || null;
     const proofImage = address.proofImage || null;
     const hasPaymentProof = proofReference && proofReference.trim() !== '' || proofImage;
     
-    // Set status to "Para analisar" if no payment proof is provided
-    const orderStatus = hasPaymentProof ? 'pending' : 'Para analizar';
+    // Check if this is a custom order (from "Novo Pedido" tab)
+    // Custom orders have items with image_front or image_back (custom designs)
+    const isCustomOrder = items.some(item => 
+      (item.image_front && item.image_front.trim() !== '') || 
+      (item.image_back && item.image_back.trim() !== '')
+    );
+    
+    // Set status based on order type and payment proof
+    let orderStatus;
+    if (isCustomOrder) {
+      // Custom orders from "Novo Pedido" go to "A Orçamentar" status
+      orderStatus = 'A Orçamentar';
+    } else {
+      // Regular store orders follow the normal payment proof logic
+      orderStatus = hasPaymentProof ? 'pending' : 'Para analizar';
+    }
+
+    // Update user's Instagram name if provided
+    if (clientInstagram && clientInstagram.trim() !== '') {
+      await prisma.user.update({
+        where: { id: Number(userId) },
+        data: { instagramName: clientInstagram.trim() }
+      });
+    }
 
     const order = await prisma.order.create({
       data: {

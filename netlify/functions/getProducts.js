@@ -18,19 +18,39 @@ exports.handler = async (event) => {
 
   try {
     const { productTypeId } = event.queryStringParameters || {};
+    const page = parseInt(event.queryStringParameters?.page) || 1;
+    const limit = parseInt(event.queryStringParameters?.limit) || 20;
+    const skip = (page - 1) * limit;
+    
     const where = productTypeId ? { product_type_id: parseInt(productTypeId, 10) } : {};
+
+    // Get total count for pagination
+    const totalCount = await prisma.product.count({ where });
 
     const products = await prisma.product.findMany({
       where,
       include: {
         productType: true,
       },
+      skip,
+      take: limit,
+      orderBy: { id: 'desc' }
     });
 
     return {
       statusCode: 200,
       headers: corsHeaders,
-      body: JSON.stringify(products), // cost_price is included by default
+      body: JSON.stringify({
+        products,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(totalCount / limit),
+          totalCount,
+          limit,
+          hasNextPage: page < Math.ceil(totalCount / limit),
+          hasPreviousPage: page > 1
+        }
+      }),
     };
   } catch (error) {
     console.error('Error fetching products:', error);

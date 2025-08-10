@@ -25,6 +25,9 @@ exports.handler = async (event) => {
   try {
     const userId = event.queryStringParameters.userId;
     const orderId = event.queryStringParameters.orderId;
+    const page = parseInt(event.queryStringParameters.page) || 1;
+    const limit = parseInt(event.queryStringParameters.limit) || 20;
+    const skip = (page - 1) * limit;
     
     let whereClause = {};
     let queryOptions = {
@@ -63,17 +66,37 @@ exports.handler = async (event) => {
         body: JSON.stringify([order]),
       };
     } else {
-      // Fetch orders by user ID or all orders
+      // Fetch orders by user ID or all orders with pagination
       whereClause = userId ? { user_id: parseInt(userId, 10) } : {};
+      
+      // Get total count for pagination
+      const totalCount = await prisma.order.count({
+        where: whereClause,
+      });
+      
       const orders = await prisma.order.findMany({
         where: whereClause,
         ...queryOptions,
+        skip,
+        take: limit,
       });
+      
+      const totalPages = Math.ceil(totalCount / limit);
       
       return {
         statusCode: 200,
         headers: { 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify(orders),
+        body: JSON.stringify({
+          orders,
+          pagination: {
+            currentPage: page,
+            totalPages,
+            totalCount,
+            limit,
+            hasNextPage: page < totalPages,
+            hasPreviousPage: page > 1
+          }
+        }),
       };
     }
   } catch (err) {

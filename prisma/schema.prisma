@@ -42,6 +42,8 @@ model Order {
   proofReference  String?     // Payment reference (nullable)
   paymentMethod   String?     // Payment method: Revolut, PayPal, Bank Transfer
   proofImage      String? 
+  trackingText    String?     // Tracking information text
+  trackingImages  String[]    // Array of tracking image URLs
 
   @@map("orders") // This maps the Prisma model Order to the actual table "orders"
 }

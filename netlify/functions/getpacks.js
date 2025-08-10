@@ -27,14 +27,34 @@ exports.handler = async (event) => {
   }
 
   try {
+    const page = parseInt(event.queryStringParameters?.page) || 1;
+    const limit = parseInt(event.queryStringParameters?.limit) || 20;
+    const skip = (page - 1) * limit;
+    
+    // Get total count for pagination
+    const totalCount = await prisma.pack.count();
+    
     const packs = await prisma.pack.findMany({
       include: { items: true },
+      skip,
+      take: limit,
+      orderBy: { created_at: 'desc' }
     });
     console.log('Fetched packs:', packs);
     return {
       statusCode: 200,
       headers: corsHeaders,
-      body: JSON.stringify(packs), // cost_price is included by default
+      body: JSON.stringify({
+        packs,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(totalCount / limit),
+          totalCount,
+          limit,
+          hasNextPage: page < Math.ceil(totalCount / limit),
+          hasPreviousPage: page > 1
+        }
+      }),
     };
   } catch (error) {
     console.error('Error in getpacks:', error);

@@ -32,15 +32,36 @@ exports.handler = async (event) => {
       };
     }
 
+    const page = parseInt(event.queryStringParameters?.page) || 1;
+    const limit = parseInt(event.queryStringParameters?.limit) || 20;
+    const skip = (page - 1) * limit;
+    
+    // Get total count for pagination
+    const totalCount = await prisma.notification.count({
+      where: { userId: parseInt(userId, 10) }
+    });
+    
     const notifications = await prisma.notification.findMany({
       where: { userId: parseInt(userId, 10) },
-      orderBy: { created_at: 'desc' }
+      orderBy: { created_at: 'desc' },
+      skip,
+      take: limit
     });
 
     return {
       statusCode: 200,
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify(notifications),
+      body: JSON.stringify({
+        notifications,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(totalCount / limit),
+          totalCount,
+          limit,
+          hasNextPage: page < Math.ceil(totalCount / limit),
+          hasPreviousPage: page > 1
+        }
+      }),
     };
   } catch (err) {
     return {

@@ -31,14 +31,35 @@ exports.handler = async (event) => {
         body: JSON.stringify({ error: 'Missing userId' }),
       };
     }
+    const page = parseInt(event.queryStringParameters?.page) || 1;
+    const limit = parseInt(event.queryStringParameters?.limit) || 20;
+    const skip = (page - 1) * limit;
+    
+    const where = { userId: parseInt(userId, 10) };
+    
+    // Get total count for pagination
+    const totalCount = await prisma.address.count({ where });
+    
     const addresses = await prisma.address.findMany({
-      where: { userId: parseInt(userId, 10) },
+      where,
       orderBy: { id: 'desc' },
+      skip,
+      take: limit,
     });
     return {
       statusCode: 200,
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify(addresses),
+      body: JSON.stringify({
+        addresses,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(totalCount / limit),
+          totalCount,
+          limit,
+          hasNextPage: page < Math.ceil(totalCount / limit),
+          hasPreviousPage: page > 1
+        }
+      }),
     };
   } catch (err) {
     return {
