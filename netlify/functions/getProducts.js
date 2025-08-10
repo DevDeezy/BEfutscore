@@ -22,7 +22,31 @@ exports.handler = async (event) => {
     const limit = parseInt(event.queryStringParameters?.limit) || 20;
     const skip = (page - 1) * limit;
     
-    const where = productTypeId ? { product_type_id: parseInt(productTypeId, 10) } : {};
+    // If filtering by a type that may have children, collect all descendant ids
+    let where = {};
+    if (productTypeId) {
+      const id = parseInt(productTypeId, 10);
+      // fetch all types to compute descendants quickly (dataset expected to be small/moderate)
+      const allTypes = await prisma.productType.findMany();
+      const byParent = new Map();
+      for (const t of allTypes) {
+        if (!byParent.has(t.parent_id || 0)) byParent.set(t.parent_id || 0, []);
+        byParent.get(t.parent_id || 0).push(t);
+      }
+      const stack = [id];
+      const ids = new Set([id]);
+      while (stack.length) {
+        const cur = stack.pop();
+        const children = byParent.get(cur) || [];
+        for (const c of children) {
+          if (!ids.has(c.id)) {
+            ids.add(c.id);
+            stack.push(c.id);
+          }
+        }
+      }
+      where = { product_type_id: { in: Array.from(ids) } };
+    }
 
     // Get total count for pagination
     const totalCount = await prisma.product.count({ where });

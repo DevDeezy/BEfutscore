@@ -18,22 +18,42 @@ exports.handler = async (event) => {
 
   try {
     const page = parseInt(event.queryStringParameters?.page) || 1;
-    const limit = parseInt(event.queryStringParameters?.limit) || 20;
+    const limit = parseInt(event.queryStringParameters?.limit) || 1000; // load many for tree
     const skip = (page - 1) * limit;
-    
-    // Get total count for pagination
+
+    // Optional: return as a tree if requested
+    const asTree = (event.queryStringParameters?.asTree || 'true') === 'true';
+
     const totalCount = await prisma.productType.count();
-    
     const productTypes = await prisma.productType.findMany({
       skip,
       take: limit,
-      orderBy: { id: 'desc' }
+      orderBy: { id: 'asc' },
+      include: { children: true },
     });
+
+    let tree = null;
+    if (asTree) {
+      // Build tree in memory
+      const byId = new Map(productTypes.map(pt => [pt.id, { ...pt, children: [] }]));
+      const roots = [];
+      for (const pt of productTypes) {
+        const node = byId.get(pt.id);
+        if (pt.parent_id && byId.has(pt.parent_id)) {
+          byId.get(pt.parent_id).children.push(node);
+        } else {
+          roots.push(node);
+        }
+      }
+      tree = roots;
+    }
+
     return {
       statusCode: 200,
       headers: corsHeaders,
       body: JSON.stringify({
         productTypes,
+        tree,
         pagination: {
           currentPage: page,
           totalPages: Math.ceil(totalCount / limit),

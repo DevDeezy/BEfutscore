@@ -110,6 +110,10 @@ model ProductType {
   id        Int       @id @default(autoincrement())
   name      String    @unique
   base_type String
+  // Hierarchical product types (e.g., Country → Club → Season)
+  parent_id Int?
+  parent    ProductType? @relation("ProductTypeHierarchy", fields: [parent_id], references: [id])
+  children  ProductType[] @relation("ProductTypeHierarchy")
   products  Product[]
 
   @@map("product_types")

@@ -17,13 +17,13 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { name, base_type } = JSON.parse(event.body);
+    const { name, base_type, parent_id } = JSON.parse(event.body);
     if (!name || !base_type) {
-      return { statusCode: 400, body: 'Name and base_type are required' };
+      return { statusCode: 400, headers: corsHeaders, body: 'Name and base_type are required' };
     }
 
     const productType = await prisma.productType.create({
-      data: { name, base_type },
+      data: { name, base_type, parent_id: parent_id ? Number(parent_id) : null },
     });
 
     return {

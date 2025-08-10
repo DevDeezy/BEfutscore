@@ -26,10 +26,14 @@ exports.handler = async (event) => {
       where: { product_type_id: productTypeId },
     });
 
-    if (products.length > 0) {
+    const children = await prisma.productType.findMany({
+      where: { parent_id: productTypeId },
+    });
+
+    if (products.length > 0 || children.length > 0) {
       return {
         statusCode: 400,
-        body: 'Cannot delete product type with associated products.',
+        body: 'Cannot delete product type with associated products or child types.',
       };
     }
 
