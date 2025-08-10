@@ -23,8 +23,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { orderId } = event.pathParameters || {};
-    const { trackingText, trackingImages } = JSON.parse(event.body);
+    const { orderId, trackingText, trackingImages } = JSON.parse(event.body);
 
     if (!orderId) {
       return {

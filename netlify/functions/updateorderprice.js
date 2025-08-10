@@ -24,18 +24,27 @@ exports.handler = async (event) => {
   }
 
   try {
-    const orderId = event.path.split('/').pop();
-    const { total_price } = JSON.parse(event.body || '{}');
+    // Try to get orderId from URL path first, then from request body
+    let orderId = event.path.split('/').pop();
+    const body = JSON.parse(event.body || '{}');
+    
+    // If orderId is not in URL path, get it from request body
+    if (!orderId || isNaN(parseInt(orderId, 10))) {
+      orderId = body.orderId;
+    }
+    
+    // Accept both 'price' and 'total_price' parameters
+    const total_price = body.total_price || body.price;
     
     if (!orderId || typeof total_price !== 'number') {
       return {
         statusCode: 400,
         headers: { 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({ error: 'orderId and total_price are required' }),
+        body: JSON.stringify({ error: 'orderId and total_price/price are required' }),
       };
     }
 
-    // Check if order exists and is in "Para analizar" status
+    // Check if order exists
     const existingOrder = await prisma.order.findUnique({
       where: { id: Number(orderId) }
     });
@@ -48,11 +57,12 @@ exports.handler = async (event) => {
       };
     }
 
-    if (existingOrder.status !== 'Para analizar') {
+    // Allow updates for both "Para analisar" and "A Orçamentar" statuses
+    if (existingOrder.status !== 'Para analisar' && existingOrder.status !== 'A Orçamentar') {
       return {
         statusCode: 400,
         headers: { 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({ error: 'Can only update price for orders in "Para analizar" status' }),
+        body: JSON.stringify({ error: 'Can only update price for orders in "Para analisar" or "A Orçamentar" status' }),
       };
     }
 
