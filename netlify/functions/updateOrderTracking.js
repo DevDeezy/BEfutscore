@@ -23,7 +23,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { orderId, trackingText, trackingImages } = JSON.parse(event.body);
+    const { orderId, trackingText, trackingImages, trackingVideos } = JSON.parse(event.body);
 
     if (!orderId) {
       return {
@@ -39,6 +39,7 @@ exports.handler = async (event) => {
       data: {
         trackingText: trackingText || null,
         trackingImages: trackingImages || [],
+        trackingVideos: trackingVideos || [],
       },
       include: {
         items: true,
