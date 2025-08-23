@@ -50,10 +50,12 @@ exports.handler = async (event) => {
     const hasPaymentProof = proofReference && proofReference.trim() !== '' || proofImage;
     
     // Check if this is a custom order (from "Novo Pedido" tab)
-    // Custom orders have items with image_front or image_back (custom designs)
+    // Custom orders don't have product_id but have custom images (image_front or image_back)
     const isCustomOrder = items.some(item => 
-      (item.image_front && item.image_front.trim() !== '') || 
-      (item.image_back && item.image_back.trim() !== '')
+      !item.product_id && (
+        (item.image_front && item.image_front.trim() !== '') || 
+        (item.image_back && item.image_back.trim() !== '')
+      )
     );
     
     // Set status based on order type and payment proof
