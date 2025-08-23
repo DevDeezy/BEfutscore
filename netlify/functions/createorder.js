@@ -28,6 +28,11 @@ exports.handler = async (event) => {
   try {
     const { userId, items, address, paymentMethod, clientInstagram } = JSON.parse(event.body || '{}');
 
+    // Fetch user info to check if it's an admin
+    const user = await prisma.user.findUnique({
+      where: { id: Number(userId) }
+    });
+
     // Fetch packs and shirt types for price calculation
     const packs = await prisma.pack.findMany({ include: { items: true } });
     const shirtTypes = await prisma.shirtType.findMany();
@@ -50,13 +55,9 @@ exports.handler = async (event) => {
     const hasPaymentProof = proofReference && proofReference.trim() !== '' || proofImage;
     
     // Check if this is a custom order (from "Novo Pedido" tab)
-    // Custom orders don't have product_id but have custom images (image_front or image_back)
-    const isCustomOrder = items.some(item => 
-      !item.product_id && (
-        (item.image_front && item.image_front.trim() !== '') || 
-        (item.image_back && item.image_back.trim() !== '')
-      )
-    );
+    // This includes: 1) Items without product_id, 2) Admin creating orders, 3) clientInstagram provided
+    const isCustomOrder = items.some(item => !item.product_id) || 
+                         user?.role === 'admin' && clientInstagram;
     
     // Set status based on order type and payment proof
     let orderStatus;
