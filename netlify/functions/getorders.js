@@ -74,7 +74,23 @@ exports.handler = async (event) => {
           // Exclude proofImage, trackingText, trackingImages, trackingVideos for smaller payload
           clientInstagram: true,
           created_at: true,
-          items: true,
+          items: {
+            select: {
+              id: true,
+              product_type: true,
+              size: true,
+              quantity: true,
+              player_name: true,
+              numero: true,
+              sexo: true,
+              ano: true,
+              anuncios: true,
+              cost_price: true,
+              shirt_type_id: true,
+              product_id: true,
+              // Exclude image_front, image_back, patch_images for smaller payload
+            }
+          },
           user: {
             select: {
               id: true,
@@ -160,6 +176,19 @@ exports.handler = async (event) => {
           console.log('- TrackingImages count:', order.trackingImages?.length || 0);
           if (order.trackingImages?.length > 0) {
             console.log('- TrackingImages total size:', order.trackingImages.reduce((sum, img) => sum + img.length, 0));
+          }
+          
+          // Check item images
+          if (order.items?.length > 0) {
+            order.items.forEach((item, itemIdx) => {
+              console.log(`  Item ${itemIdx + 1}:`);
+              console.log(`  - image_front size: ${item.image_front?.length || 0}`);
+              console.log(`  - image_back size: ${item.image_back?.length || 0}`);
+              console.log(`  - patch_images count: ${item.patch_images?.length || 0}`);
+              if (item.patch_images?.length > 0) {
+                console.log(`  - patch_images total size: ${item.patch_images.reduce((sum, img) => sum + img.length, 0)}`);
+              }
+            });
           }
         });
       }
