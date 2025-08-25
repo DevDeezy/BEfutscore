@@ -2,8 +2,12 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 exports.handler = async (event) => {
-  console.log('updateOrderTracking called with method:', event.httpMethod);
+  console.log('=== updateOrderTracking FUNCTION START ===');
+  console.log('HTTP Method:', event.httpMethod);
+  console.log('Headers:', JSON.stringify(event.headers, null, 2));
   console.log('Request body:', event.body);
+  console.log('Event path:', event.path);
+  console.log('Query parameters:', event.queryStringParameters);
   
   if (event.httpMethod === 'OPTIONS') {
     console.log('Handling OPTIONS request');
