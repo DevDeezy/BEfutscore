@@ -30,13 +30,15 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
       extraCharges[key] = { patches: 0, personalization: 0 };
     }
     itemCounts[key].count += 1;
+    
     // Add extra charges for t-shirts (both custom and store products with personalization)
-    if (item.product_type === 'tshirt' || (item.product_id && (item.player_name || item.numero || (item.patch_images && item.patch_images.length > 0)))) {
+    // For store products (product_id exists), always check for personalization regardless of product_type
+    if (item.product_type === 'tshirt' || item.product_id) {
       extraCharges[key].patches += Array.isArray(item.patch_images) ? item.patch_images.length : 0;
       // Personalization is charged once if there's name and/or number (not separately)
       const hasPersonalization = (item.numero && String(item.numero).trim() !== '') || 
                                  (item.player_name && String(item.player_name).trim() !== '');
-      if (hasPersonalization && extraCharges[key].personalization === undefined) {
+      if (hasPersonalization && extraCharges[key].personalization === 0) {
         extraCharges[key].personalization = 1;
       }
     }
