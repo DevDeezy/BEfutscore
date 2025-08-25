@@ -46,6 +46,7 @@ model Order {
   trackingText    String?     // Tracking information text
   trackingImages  String[]    // Array of tracking image URLs
   trackingVideos  String[]    // Array of tracking video URLs
+  clientInstagram String?     // Instagram do cliente específico desta encomenda
 
   @@map("orders") // This maps the Prisma model Order to the actual table "orders"
 }

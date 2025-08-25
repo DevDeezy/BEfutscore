@@ -27,14 +27,18 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
 
     if (!itemCounts[key]) {
       itemCounts[key] = { count: 0, price: item.price || 0 };
-      extraCharges[key] = { patches: 0, number: 0, name: 0 };
+      extraCharges[key] = { patches: 0, personalization: 0 };
     }
     itemCounts[key].count += 1;
-    // Add extra charges for t-shirts
-    if (item.product_type === 'tshirt') {
+    // Add extra charges for t-shirts (both custom and store products with personalization)
+    if (item.product_type === 'tshirt' || (item.product_id && (item.player_name || item.numero || (item.patch_images && item.patch_images.length > 0)))) {
       extraCharges[key].patches += Array.isArray(item.patch_images) ? item.patch_images.length : 0;
-      if (item.numero && String(item.numero).trim() !== '') extraCharges[key].number += 1;
-      if (item.player_name && String(item.player_name).trim() !== '') extraCharges[key].name += 1;
+      // Personalization is charged once if there's name and/or number (not separately)
+      const hasPersonalization = (item.numero && String(item.numero).trim() !== '') || 
+                                 (item.player_name && String(item.player_name).trim() !== '');
+      if (hasPersonalization && extraCharges[key].personalization === undefined) {
+        extraCharges[key].personalization = 1;
+      }
     }
   }
 
@@ -80,16 +84,20 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
             // Base price
             let base = counts[key].count * getShirtPrice(shirtTypeId);
             // Add extras
-            const extras = extraCharges[key] || { patches: 0, number: 0, name: 0 };
+            const extras = extraCharges[key] || { patches: 0, personalization: 0 };
             base += extras.patches * PATCH_PRICE;
-            base += extras.number * NUMBER_PRICE;
-            base += extras.name * NAME_PRICE;
+            base += extras.personalization * PERSONALIZATION_PRICE;
             rest += base;
           } else if (key === 'shoes') { // Old logic fallback
             rest += counts[key].count * shoePrice;
           } else if (key.startsWith('product_')) {
             // New logic for catalog products
-            rest += counts[key].count * counts[key].price;
+            let base = counts[key].count * counts[key].price;
+            // Add extras for catalog products with personalization
+            const extras = extraCharges[key] || { patches: 0, personalization: 0 };
+            base += extras.patches * PATCH_PRICE;
+            base += extras.personalization * PERSONALIZATION_PRICE;
+            rest += base;
           }
         }
       }
@@ -102,8 +110,7 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
 
 // Default extra charges for t-shirt customizations (fallback values)
 let PATCH_PRICE = 2; // €2 per patch
-let NUMBER_PRICE = 3; // €3 for number
-let NAME_PRICE = 3; // €3 for name
+let PERSONALIZATION_PRICE = 3; // €3 for personalization (name and/or number)
 
 // Function to load pricing values from database
 async function loadPricingValues() {
@@ -117,11 +124,15 @@ async function loadPricingValues() {
         case 'patch_price':
           PATCH_PRICE = config.price;
           break;
-        case 'number_price':
-          NUMBER_PRICE = config.price;
+        case 'personalization_price':
+          PERSONALIZATION_PRICE = config.price;
           break;
+        // Keep backward compatibility
+        case 'number_price':
         case 'name_price':
-          NAME_PRICE = config.price;
+          if (!configs.find(c => c.key === 'personalization_price')) {
+            PERSONALIZATION_PRICE = config.price;
+          }
           break;
       }
     });

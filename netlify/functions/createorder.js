@@ -69,13 +69,7 @@ exports.handler = async (event) => {
       orderStatus = hasPaymentProof ? 'pending' : 'Para analizar';
     }
 
-    // Update user's Instagram name if provided
-    if (clientInstagram && clientInstagram.trim() !== '') {
-      await prisma.user.update({
-        where: { id: Number(userId) },
-        data: { instagramName: clientInstagram.trim() }
-      });
-    }
+    // Note: clientInstagram will be saved directly in the order, not in user profile
 
     const order = await prisma.order.create({
       data: {
@@ -92,6 +86,7 @@ exports.handler = async (event) => {
         proofReference: proofReference,
         paymentMethod: paymentMethod || null,
         proofImage: proofImage,
+        clientInstagram: clientInstagram && clientInstagram.trim() !== '' ? clientInstagram.trim() : null,
         items: {
           create: items.map((item) => {
             let cost_price = 0;
