@@ -2,6 +2,10 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 exports.handler = async (event) => {
+  console.log('=== getorders FUNCTION START ===');
+  console.log('HTTP Method:', event.httpMethod);
+  console.log('Query Parameters:', event.queryStringParameters);
+  
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
@@ -23,11 +27,13 @@ exports.handler = async (event) => {
   }
 
   try {
-    const userId = event.queryStringParameters.userId;
-    const orderId = event.queryStringParameters.orderId;
-    const page = parseInt(event.queryStringParameters.page) || 1;
-    const limit = parseInt(event.queryStringParameters.limit) || 20;
+    const userId = event.queryStringParameters?.userId;
+    const orderId = event.queryStringParameters?.orderId;
+    const page = parseInt(event.queryStringParameters?.page) || 1;
+    const limit = parseInt(event.queryStringParameters?.limit) || 20;
     const skip = (page - 1) * limit;
+    
+    console.log('Parsed parameters:', { userId, orderId, page, limit, skip });
     
     let whereClause = {};
     let queryOptions = {
@@ -46,7 +52,10 @@ exports.handler = async (event) => {
 
     // For list views, exclude large video data to prevent 502 errors
     const isListView = !orderId;
+    console.log('Is list view:', isListView);
+    
     if (isListView) {
+      console.log('Using select mode for list view (excluding videos and large fields)');
       queryOptions = {
         select: {
           id: true,
@@ -62,11 +71,8 @@ exports.handler = async (event) => {
           total_price: true,
           proofReference: true,
           paymentMethod: true,
-          proofImage: true,
+          // Exclude proofImage, trackingText, trackingImages, trackingVideos for smaller payload
           clientInstagram: true,
-          trackingText: true,
-          trackingImages: true,
-          // Exclude trackingVideos from list view
           created_at: true,
           items: true,
           user: {
@@ -79,6 +85,8 @@ exports.handler = async (event) => {
         },
         orderBy: { created_at: 'desc' }
       };
+    } else {
+      console.log('Using include mode for single order view');
     }
 
     if (orderId) {
@@ -107,10 +115,13 @@ exports.handler = async (event) => {
       whereClause = userId ? { user_id: parseInt(userId, 10) } : {};
       
       // Get total count for pagination
+      console.log('Getting total count with whereClause:', whereClause);
       const totalCount = await prisma.order.count({
         where: whereClause,
       });
+      console.log('Total count:', totalCount);
       
+      console.log('Fetching orders with query options...');
       const orders = await prisma.order.findMany({
         where: whereClause,
         ...queryOptions,
@@ -118,29 +129,61 @@ exports.handler = async (event) => {
         take: limit,
       });
       
-      const totalPages = Math.ceil(totalCount / limit);
+      console.log('Orders fetched:', orders.length);
+      console.log('Sample order keys:', orders.length > 0 ? Object.keys(orders[0]) : 'No orders');
+      
+      // Calculate payload size
+      const responseData = {
+        orders,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(totalCount / limit),
+          totalCount,
+          limit,
+          hasNextPage: page < Math.ceil(totalCount / limit),
+          hasPreviousPage: page > 1
+        }
+      };
+      
+      const jsonString = JSON.stringify(responseData);
+      console.log('Response payload size:', jsonString.length, 'characters');
+      console.log('Response payload size MB:', (jsonString.length / (1024 * 1024)).toFixed(2));
+      
+      // Log detailed item counts if payload is large
+      if (jsonString.length > 1000000) { // > 1MB
+        console.log('Large payload detected! Analyzing...');
+        orders.forEach((order, idx) => {
+          console.log(`Order ${idx + 1}:`);
+          console.log('- Items count:', order.items?.length || 0);
+          console.log('- ProofImage size:', order.proofImage?.length || 0);
+          console.log('- TrackingText size:', order.trackingText?.length || 0);
+          console.log('- TrackingImages count:', order.trackingImages?.length || 0);
+          if (order.trackingImages?.length > 0) {
+            console.log('- TrackingImages total size:', order.trackingImages.reduce((sum, img) => sum + img.length, 0));
+          }
+        });
+      }
       
       return {
         statusCode: 200,
         headers: { 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({
-          orders,
-          pagination: {
-            currentPage: page,
-            totalPages,
-            totalCount,
-            limit,
-            hasNextPage: page < totalPages,
-            hasPreviousPage: page > 1
-          }
-        }),
+        body: jsonString,
       };
     }
   } catch (err) {
+    console.error('=== ERROR in getorders ===');
+    console.error('Error message:', err.message);
+    console.error('Error stack:', err.stack);
+    console.error('Error code:', err.code);
+    
     return {
-      statusCode: 400,
+      statusCode: 500,
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ error: err.message }),
+      body: JSON.stringify({ 
+        error: err.message,
+        code: err.code,
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      }),
     };
   }
 };
