@@ -56,13 +56,24 @@ exports.handler = async (event) => {
       };
     }
 
-    const { orderId, trackingText, trackingImages, trackingVideos } = parsedBody;
-    console.log('Parsed data:', { 
-      orderId, 
-      trackingText: trackingText ? 'present' : 'null', 
-      trackingImages: trackingImages?.length || 'none', 
-      trackingVideos: trackingVideos?.length || 'none' 
+        const { orderId, trackingText, trackingImages, trackingVideos } = parsedBody;
+    console.log('Parsed data:', {
+      orderId,
+      trackingText: trackingText ? 'present' : 'null',
+      trackingImages: trackingImages?.length || 'none',
+      trackingVideos: trackingVideos?.length || 'none'
     });
+
+    // Log detailed info about videos if they exist
+    if (trackingVideos && trackingVideos.length > 0) {
+      console.log('Video details:');
+      trackingVideos.forEach((video, index) => {
+        console.log(`Video ${index + 1}:`);
+        console.log(`- Size: ${video.length} characters`);
+        console.log(`- Type: ${video.substring(0, 50)}...`);
+        console.log(`- Is base64 data URL: ${video.startsWith('data:video/')}`);
+      });
+    }
 
     if (!orderId) {
       console.log('Missing orderId in request');
