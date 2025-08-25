@@ -52,12 +52,13 @@ exports.handler = async (event) => {
           id: true,
           user_id: true,
           status: true,
-          delivery_first_name: true,
-          delivery_last_name: true,
-          delivery_address: true,
-          delivery_postal_code: true,
-          delivery_city: true,
-          delivery_phone: true,
+          address_nome: true,
+          address_morada: true,
+          address_cidade: true,
+          address_distrito: true,
+          address_pais: true,
+          address_codigo_postal: true,
+          address_telemovel: true,
           total_price: true,
           proofReference: true,
           paymentMethod: true,
@@ -67,7 +68,6 @@ exports.handler = async (event) => {
           trackingImages: true,
           // Exclude trackingVideos from list view
           created_at: true,
-          updated_at: true,
           items: true,
           user: {
             select: {
