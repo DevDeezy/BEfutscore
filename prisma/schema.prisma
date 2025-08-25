@@ -42,6 +42,8 @@ model Order {
   items           OrderItem[]
   proofReference  String?     // Payment reference (nullable)
   paymentMethod   String?     // Payment method: Revolut, PayPal, Bank Transfer
+  paymentRecipient String?    // Payment recipient name (e.g., MIGUEL, HUGO)
+  paymentAccountInfo String?  // Payment account details (e.g., Revolut - 12312)
   proofImage      String? 
   trackingText    String?     // Tracking information text
   trackingImages  String[]    // Array of tracking image URLs

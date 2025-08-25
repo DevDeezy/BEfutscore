@@ -27,6 +27,10 @@ exports.handler = async (event) => {
 
   try {
     const { userId, items, address, paymentMethod, clientInstagram } = JSON.parse(event.body || '{}');
+    
+    // Extract payment details from address object (sent from Cart component)
+    const selectedRecipient = address.selectedRecipient;
+    const selectedPaymentMethod = address.selectedPaymentMethod;
 
     // Fetch user info to check if it's an admin
     const user = await prisma.user.findUnique({
@@ -85,6 +89,8 @@ exports.handler = async (event) => {
         total_price: finalPrice,
         proofReference: proofReference,
         paymentMethod: paymentMethod || null,
+        paymentRecipient: selectedRecipient || null,
+        paymentAccountInfo: selectedPaymentMethod ? `${selectedPaymentMethod.method} - ${selectedPaymentMethod.accountInfo}` : null,
         proofImage: proofImage,
         clientInstagram: clientInstagram && clientInstagram.trim() !== '' ? clientInstagram.trim() : null,
         items: {

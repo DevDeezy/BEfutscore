@@ -42,6 +42,10 @@ exports.handler = async (event) => {
         proofImage: true,
         trackingText: true,
         trackingImages: true,
+        paymentMethod: true,
+        paymentRecipient: true,
+        paymentAccountInfo: true,
+        proofReference: true,
         items: {
           select: {
             id: true,
@@ -71,6 +75,10 @@ exports.handler = async (event) => {
         proofImage: order.proofImage,
         trackingText: order.trackingText,
         trackingImages: order.trackingImages || [],
+        paymentMethod: order.paymentMethod,
+        paymentRecipient: order.paymentRecipient,
+        paymentAccountInfo: order.paymentAccountInfo,
+        proofReference: order.proofReference,
         items: order.items.map(item => ({
           id: item.id,
           image_front: item.image_front,
