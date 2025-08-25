@@ -35,11 +35,11 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
     // For store products (product_id exists), always check for personalization regardless of product_type
     if (item.product_type === 'tshirt' || item.product_id) {
       extraCharges[key].patches += Array.isArray(item.patch_images) ? item.patch_images.length : 0;
-      // Personalization is charged once if there's name and/or number (not separately)
+      // Personalization is charged per item if there's name and/or number
       const hasPersonalization = (item.numero && String(item.numero).trim() !== '') || 
                                  (item.player_name && String(item.player_name).trim() !== '');
-      if (hasPersonalization && extraCharges[key].personalization === 0) {
-        extraCharges[key].personalization = 1;
+      if (hasPersonalization) {
+        extraCharges[key].personalization += 1;
       }
     }
   }
