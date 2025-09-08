@@ -33,7 +33,6 @@ exports.handler = async (event) => {
         image_url: true,
         available_sizes: true,
         product_type_id: true,
-        shirt_type_id: true,
         sexo: true,
         ano: true,
         numero: true,
