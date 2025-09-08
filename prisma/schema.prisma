@@ -134,6 +134,9 @@ model Product {
   available_sizes String[]
   productType     ProductType @relation(fields: [product_type_id], references: [id])
   product_type_id Int
+  // Optional shirt type association for pricing/pack rules
+  shirt_type_id   Int?
+  shirtType       ShirtType?  @relation(fields: [shirt_type_id], references: [id])
   orderItems      OrderItem[]
   sexo            String      @default("Neutro")
   ano             String      @default("21/22")
