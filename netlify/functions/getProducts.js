@@ -125,9 +125,11 @@ exports.handler = async (event) => {
       totalCount
     });
 
+    const newestId = products.length > 0 ? products[0].id : null;
+    const cacheToken = newestId != null ? `${newestId}:${totalCount || 'unk'}` : Date.now();
     return {
       statusCode: 200,
-      headers: withCacheControl(corsHeaders),
+      headers: withCacheControl(corsHeaders, undefined, undefined, cacheToken),
       body: JSON.stringify({
         products,
         pagination: {

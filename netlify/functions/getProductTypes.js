@@ -66,9 +66,11 @@ exports.handler = async (event) => {
     const totalMs = stopAll();
     console.log('[getProductTypes] timing', { totalMs, count: totalCount, returned: productTypes.length });
 
+    const newestId = productTypes.length > 0 ? productTypes[productTypes.length - 1].id : null;
+    const cacheToken = newestId != null ? `${newestId}:${totalCount || 'unk'}` : Date.now();
     return {
       statusCode: 200,
-      headers: withCacheControl(corsHeaders),
+      headers: withCacheControl(corsHeaders, undefined, undefined, cacheToken),
       body: JSON.stringify({
         productTypes,
         tree,

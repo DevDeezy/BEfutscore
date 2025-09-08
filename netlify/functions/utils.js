@@ -1,7 +1,7 @@
 // Lightweight timing and cache helpers for Netlify functions
 
-const DEFAULT_SMAXAGE = parseInt(process.env.API_SMAXAGE || '300', 10); // 5 minutes
-const DEFAULT_STALE = parseInt(process.env.API_STALE || '120', 10); // 2 minutes
+const DEFAULT_SMAXAGE = parseInt(process.env.API_SMAXAGE || '60', 10);
+const DEFAULT_STALE = parseInt(process.env.API_STALE || '30', 10);
 
 function startTimer() {
   const start = Date.now();
@@ -25,11 +25,9 @@ function cacheSet(key, value, ttlMs) {
   memoryCache.set(key, { value, expiresAt: ttlMs ? Date.now() + ttlMs : 0 });
 }
 
-function withCacheControl(headers = {}, sMaxAge = DEFAULT_SMAXAGE, staleWhileRevalidate = DEFAULT_STALE) {
-  return {
-    ...headers,
-    'Cache-Control': `public, s-maxage=${sMaxAge}, stale-while-revalidate=${staleWhileRevalidate}`,
-  };
+function withCacheControl(headers = {}, sMaxAge = DEFAULT_SMAXAGE, staleWhileRevalidate = DEFAULT_STALE, revalidateToken) {
+  const extras = revalidateToken ? { 'x-cache-buster': String(revalidateToken) } : {};
+  return { ...headers, 'Cache-Control': `public, s-maxage=${sMaxAge}, stale-while-revalidate=${staleWhileRevalidate}`, ...extras };
 }
 
 module.exports = {
