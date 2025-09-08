@@ -24,6 +24,7 @@ exports.handler = async (event) => {
     let findManyMs = 0;
 
     const { productTypeId } = event.queryStringParameters || {};
+    const summary = (event.queryStringParameters?.summary === 'true');
     const page = parseInt(event.queryStringParameters?.page) || 1;
     const limit = parseInt(event.queryStringParameters?.limit) || 20;
     const skip = (page - 1) * limit;
@@ -87,18 +88,25 @@ exports.handler = async (event) => {
     }
 
     const tFindMany = startTimer();
+    const selectFields = {
+      id: true,
+      name: true,
+      description: true,
+      price: true,
+      available_sizes: true,
+      ano: true,
+      productType: { select: { id: true, name: true, base_type: true } },
+    };
+    if (!summary) {
+      // Only include image data when not in summary mode (avoid 6MB response limit)
+      // Images can be very large when stored as base64
+      // In summary mode, frontend can fetch single product details if needed
+      selectFields.image_url = true;
+    }
+
     const products = await prisma.product.findMany({
       where,
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        price: true,
-        image_url: true,
-        available_sizes: true,
-        ano: true,
-        productType: { select: { id: true, name: true, base_type: true } },
-      },
+      select: selectFields,
       skip,
       take: limit,
       orderBy: { id: 'desc' }
