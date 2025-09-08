@@ -45,7 +45,7 @@ exports.handler = async (event) => {
       };
     }
 
-    const { name, description, price, image_url, available_sizes, product_type_id, sexo, ano, numero, cost_price, shirt_type_id } = JSON.parse(event.body || '{}');
+    const { name, description, price, image_url, available_sizes, product_type_id, sexo, ano, numero, cost_price } = JSON.parse(event.body || '{}');
 
     if (!name || !price || !image_url || !available_sizes || !product_type_id) {
       return { 
@@ -78,8 +78,7 @@ exports.handler = async (event) => {
         cost_price: typeof cost_price === 'number' ? cost_price : null,
         image_url,
         available_sizes,
-        product_type_id: parseInt(product_type_id),
-        shirt_type_id: typeof shirt_type_id === 'number' ? shirt_type_id : null,
+        productType: { connect: { id: parseInt(product_type_id) } },
         sexo: sexo || 'Neutro',
         ano: ano || '21/22',
         numero: numero || null,
