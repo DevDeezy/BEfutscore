@@ -17,6 +17,11 @@ exports.handler = async (event) => {
   }
 
   try {
+    const startAll = Date.now();
+    let fetchTypesMs = 0;
+    let countMs = 0;
+    let findManyMs = 0;
+
     const { productTypeId } = event.queryStringParameters || {};
     const page = parseInt(event.queryStringParameters?.page) || 1;
     const limit = parseInt(event.queryStringParameters?.limit) || 20;
@@ -27,7 +32,9 @@ exports.handler = async (event) => {
     if (productTypeId) {
       const id = parseInt(productTypeId, 10);
       // fetch all types to compute descendants quickly (dataset expected to be small/moderate)
+      const tFetchTypes = Date.now();
       const allTypes = await prisma.productType.findMany();
+      fetchTypesMs = Date.now() - tFetchTypes;
       const byParent = new Map();
       for (const t of allTypes) {
         if (!byParent.has(t.parent_id || 0)) byParent.set(t.parent_id || 0, []);
@@ -49,8 +56,11 @@ exports.handler = async (event) => {
     }
 
     // Get total count for pagination
+    const tCount = Date.now();
     const totalCount = await prisma.product.count({ where });
+    countMs = Date.now() - tCount;
 
+    const tFindMany = Date.now();
     const products = await prisma.product.findMany({
       where,
       include: {
@@ -59,6 +69,22 @@ exports.handler = async (event) => {
       skip,
       take: limit,
       orderBy: { id: 'desc' }
+    });
+    findManyMs = Date.now() - tFindMany;
+
+    const totalMs = Date.now() - startAll;
+    const otherMs = totalMs - (fetchTypesMs + countMs + findManyMs);
+    console.log('[getProducts] timing', {
+      totalMs,
+      fetchTypesMs,
+      countMs,
+      findManyMs,
+      otherMs,
+      page,
+      limit,
+      productTypeId: productTypeId || null,
+      returned: Array.isArray(products) ? products.length : 0,
+      totalCount
     });
 
     return {
