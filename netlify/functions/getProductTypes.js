@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { startTimer, cacheGet, cacheSet, withCacheControl } = require('./utils');
+const { startTimer, withCacheControl } = require('./utils');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -40,37 +40,29 @@ exports.handler = async (event) => {
 
     let tree = null;
     if (asTree) {
-      // Build tree in memory
-      const cacheKey = 'productTypes:tree:v1';
-      const cachedTree = cacheGet(cacheKey);
-      if (cachedTree && page === 1 && limit >= 1000) {
-        tree = cachedTree;
-      } else {
-        const byId = new Map(productTypes.map(pt => [pt.id, { ...pt, children: [] }]));
-        const roots = [];
-        for (const pt of productTypes) {
-          const node = byId.get(pt.id);
-          if (pt.parent_id && byId.has(pt.parent_id)) {
-            byId.get(pt.parent_id).children.push(node);
-          } else {
-            roots.push(node);
-          }
-        }
-        tree = roots;
-        if (page === 1 && limit >= 1000) {
-          cacheSet(cacheKey, tree, 10 * 60 * 1000);
+      // Build tree in memory (no in-process cache to avoid stale data)
+      const byId = new Map(productTypes.map(pt => [pt.id, { ...pt, children: [] }]));
+      const roots = [];
+      for (const pt of productTypes) {
+        const node = byId.get(pt.id);
+        if (pt.parent_id && byId.has(pt.parent_id)) {
+          byId.get(pt.parent_id).children.push(node);
+        } else {
+          roots.push(node);
         }
       }
+      tree = roots;
     }
 
     const totalMs = stopAll();
     console.log('[getProductTypes] timing', { totalMs, count: totalCount, returned: productTypes.length });
 
+    const isAdmin = (event.headers['x-admin-request'] === 'true');
     const newestId = productTypes.length > 0 ? productTypes[productTypes.length - 1].id : null;
     const cacheToken = newestId != null ? `${newestId}:${totalCount || 'unk'}` : Date.now();
     return {
       statusCode: 200,
-      headers: withCacheControl(corsHeaders, undefined, undefined, cacheToken),
+      headers: isAdmin ? corsHeaders : withCacheControl(corsHeaders, undefined, undefined, cacheToken),
       body: JSON.stringify({
         productTypes,
         tree,
