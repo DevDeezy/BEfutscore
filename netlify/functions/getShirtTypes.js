@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const { startTimer, withCacheControl } = require('./utils');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,30 +17,34 @@ exports.handler = async (event) => {
     return { statusCode: 405, headers: corsHeaders, body: 'Method Not Allowed' };
   }
   try {
+    const stopAll = startTimer();
     const page = parseInt(event.queryStringParameters?.page) || 1;
     const limit = parseInt(event.queryStringParameters?.limit) || 20;
     const skip = (page - 1) * limit;
     
-    // Get total count for pagination
-    const totalCount = await prisma.shirtType.count();
+    // Get total count only on first page
+    let totalCount = null;
+    if (page === 1) {
+      totalCount = await prisma.shirtType.count();
+    }
     
     const types = await prisma.shirtType.findMany({
       skip,
       take: limit,
       orderBy: { id: 'desc' }
     });
-    console.log('Fetched shirt types:', types);
+    console.log('Fetched shirt types:', types.length, 'totalMs:', stopAll());
     return { 
       statusCode: 200, 
-      headers: corsHeaders, 
+      headers: withCacheControl(corsHeaders, 300, 120), 
       body: JSON.stringify({
         shirtTypes: types,
         pagination: {
           currentPage: page,
-          totalPages: Math.ceil(totalCount / limit),
+          totalPages: totalCount != null ? Math.ceil(totalCount / limit) : undefined,
           totalCount,
           limit,
-          hasNextPage: page < Math.ceil(totalCount / limit),
+          hasNextPage: totalCount != null ? page < Math.ceil(totalCount / limit) : types.length === limit,
           hasPreviousPage: page > 1
         }
       }) 

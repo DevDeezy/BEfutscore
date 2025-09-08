@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const { startTimer, withCacheControl } = require('./utils');
 
 exports.handler = async (event) => {
   console.log('=== getorders FUNCTION START ===');
@@ -27,6 +28,7 @@ exports.handler = async (event) => {
   }
 
   try {
+    const stopAll = startTimer();
     const userId = event.queryStringParameters?.userId;
     const orderId = event.queryStringParameters?.orderId;
     const page = parseInt(event.queryStringParameters?.page) || 1;
@@ -123,27 +125,31 @@ exports.handler = async (event) => {
       
       return {
         statusCode: 200,
-        headers: { 'Access-Control-Allow-Origin': '*' },
+        headers: withCacheControl({ 'Access-Control-Allow-Origin': '*' }),
         body: JSON.stringify([order]),
       };
     } else {
       // Fetch orders by user ID or all orders with pagination
       whereClause = userId ? { user_id: parseInt(userId, 10) } : {};
       
-      // Get total count for pagination
-      console.log('Getting total count with whereClause:', whereClause);
-      const totalCount = await prisma.order.count({
-        where: whereClause,
-      });
-      console.log('Total count:', totalCount);
+      // Get total count only on first page to reduce DB load
+      let totalCount = null;
+      if (page === 1) {
+        console.log('Getting total count with whereClause:', whereClause);
+        const tCount = startTimer();
+        totalCount = await prisma.order.count({ where: whereClause });
+        console.log('Total count:', totalCount, 'countMs:', tCount());
+      }
       
       console.log('Fetching orders with query options...');
+      const tFind = startTimer();
       const orders = await prisma.order.findMany({
         where: whereClause,
         ...queryOptions,
         skip,
         take: limit,
       });
+      console.log('findManyMs:', tFind());
       
       console.log('Orders fetched:', orders.length);
       console.log('Sample order keys:', orders.length > 0 ? Object.keys(orders[0]) : 'No orders');
@@ -193,9 +199,11 @@ exports.handler = async (event) => {
         });
       }
       
+      const totalMs = stopAll();
+      console.log('[getorders] totalMs:', totalMs);
       return {
         statusCode: 200,
-        headers: { 'Access-Control-Allow-Origin': '*' },
+        headers: withCacheControl({ 'Access-Control-Allow-Origin': '*' }, 60, 30),
         body: jsonString,
       };
     }

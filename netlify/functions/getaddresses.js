@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const { startTimer, withCacheControl } = require('./utils');
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -23,6 +24,7 @@ exports.handler = async (event) => {
   }
 
   try {
+    const stopAll = startTimer();
     const userId = event.queryStringParameters.userId;
     if (!userId) {
       return {
@@ -37,8 +39,11 @@ exports.handler = async (event) => {
     
     const where = { userId: parseInt(userId, 10) };
     
-    // Get total count for pagination
-    const totalCount = await prisma.address.count({ where });
+    // Get total count only on first page
+    let totalCount = null;
+    if (page === 1) {
+      totalCount = await prisma.address.count({ where });
+    }
     
     const addresses = await prisma.address.findMany({
       where,
@@ -48,15 +53,15 @@ exports.handler = async (event) => {
     });
     return {
       statusCode: 200,
-      headers: { 'Access-Control-Allow-Origin': '*' },
+      headers: withCacheControl({ 'Access-Control-Allow-Origin': '*' }, 120, 60),
       body: JSON.stringify({
         addresses,
         pagination: {
           currentPage: page,
-          totalPages: Math.ceil(totalCount / limit),
+          totalPages: totalCount != null ? Math.ceil(totalCount / limit) : undefined,
           totalCount,
           limit,
-          hasNextPage: page < Math.ceil(totalCount / limit),
+          hasNextPage: totalCount != null ? page < Math.ceil(totalCount / limit) : addresses.length === limit,
           hasPreviousPage: page > 1
         }
       }),

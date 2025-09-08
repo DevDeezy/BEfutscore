@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const { startTimer, cacheGet, cacheSet, withCacheControl } = require('./utils');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,7 +18,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const startAll = Date.now();
+    const stopAll = startTimer();
     let fetchTypesMs = 0;
     let countMs = 0;
     let findManyMs = 0;
@@ -32,9 +33,15 @@ exports.handler = async (event) => {
     if (productTypeId) {
       const id = parseInt(productTypeId, 10);
       // fetch all types to compute descendants quickly (dataset expected to be small/moderate)
-      const tFetchTypes = Date.now();
-      const allTypes = await prisma.productType.findMany();
-      fetchTypesMs = Date.now() - tFetchTypes;
+      const tFetchTypes = startTimer();
+      // Cache product types tree for 10 minutes
+      const cacheKey = 'productTypes:all';
+      let allTypes = cacheGet(cacheKey);
+      if (!allTypes) {
+        allTypes = await prisma.productType.findMany();
+        cacheSet(cacheKey, allTypes, 10 * 60 * 1000);
+      }
+      fetchTypesMs = tFetchTypes();
       const byParent = new Map();
       for (const t of allTypes) {
         if (!byParent.has(t.parent_id || 0)) byParent.set(t.parent_id || 0, []);
@@ -55,24 +62,54 @@ exports.handler = async (event) => {
       where = { product_type_id: { in: Array.from(ids) } };
     }
 
-    // Get total count for pagination
-    const tCount = Date.now();
-    const totalCount = await prisma.product.count({ where });
-    countMs = Date.now() - tCount;
+    // Support server-side search
+    const q = (event.queryStringParameters?.q || '').trim();
+    if (q) {
+      const value = q.toLowerCase();
+      // Basic case-insensitive contains filters
+      where = {
+        AND: [
+          where,
+          {
+            OR: [
+              { name: { contains: value, mode: 'insensitive' } },
+              { description: { contains: value, mode: 'insensitive' } },
+            ],
+          },
+        ],
+      };
+    }
 
-    const tFindMany = Date.now();
+    // Get total count only on first page to avoid heavy queries
+    let totalCount = null;
+    let totalPages = null;
+    if (page === 1) {
+      const tCount = startTimer();
+      totalCount = await prisma.product.count({ where });
+      countMs = tCount();
+      totalPages = Math.ceil(totalCount / limit);
+    }
+
+    const tFindMany = startTimer();
     const products = await prisma.product.findMany({
       where,
-      include: {
-        productType: true,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        price: true,
+        image_url: true,
+        available_sizes: true,
+        ano: true,
+        productType: { select: { id: true, name: true, base_type: true } },
       },
       skip,
       take: limit,
       orderBy: { id: 'desc' }
     });
-    findManyMs = Date.now() - tFindMany;
+    findManyMs = tFindMany();
 
-    const totalMs = Date.now() - startAll;
+    const totalMs = stopAll();
     const otherMs = totalMs - (fetchTypesMs + countMs + findManyMs);
     console.log('[getProducts] timing', {
       totalMs,
@@ -83,21 +120,22 @@ exports.handler = async (event) => {
       page,
       limit,
       productTypeId: productTypeId || null,
+      q,
       returned: Array.isArray(products) ? products.length : 0,
       totalCount
     });
 
     return {
       statusCode: 200,
-      headers: corsHeaders,
+      headers: withCacheControl(corsHeaders),
       body: JSON.stringify({
         products,
         pagination: {
           currentPage: page,
-          totalPages: Math.ceil(totalCount / limit),
+          totalPages: totalPages != null ? totalPages : undefined,
           totalCount,
           limit,
-          hasNextPage: page < Math.ceil(totalCount / limit),
+          hasNextPage: totalPages != null ? page < totalPages : products.length === limit,
           hasPreviousPage: page > 1
         }
       }),
