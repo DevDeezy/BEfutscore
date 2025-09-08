@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { startTimer, withCacheControl } = require('./utils');
+const { startTimer } = require('./utils');
 
 exports.handler = async (event) => {
   console.log('=== getorders FUNCTION START ===');
@@ -125,7 +125,7 @@ exports.handler = async (event) => {
       
       return {
         statusCode: 200,
-        headers: withCacheControl({ 'Access-Control-Allow-Origin': '*' }),
+        headers: { 'Access-Control-Allow-Origin': '*' },
         body: JSON.stringify([order]),
       };
     } else {
@@ -203,7 +203,7 @@ exports.handler = async (event) => {
       console.log('[getorders] totalMs:', totalMs);
       return {
         statusCode: 200,
-        headers: withCacheControl({ 'Access-Control-Allow-Origin': '*' }, 60, 30),
+        headers: { 'Access-Control-Allow-Origin': '*' },
         body: jsonString,
       };
     }

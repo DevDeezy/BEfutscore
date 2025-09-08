@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { startTimer, withCacheControl } = require('./utils');
+const { startTimer } = require('./utils');
 
 exports.handler = async (event) => {
   // Handle CORS preflight
@@ -27,6 +27,27 @@ exports.handler = async (event) => {
   }
   try {
     const stopAll = startTimer();
+    const userIdParam = event.queryStringParameters?.userId;
+    if (userIdParam) {
+      const id = parseInt(userIdParam, 10);
+      const user = await prisma.user.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          created_at: true,
+          instagramName: true,
+          instagramNames: true,
+          userEmail: true,
+        },
+      });
+      if (!user) {
+        return { statusCode: 404, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: 'User not found' }) };
+      }
+      return { statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify(user) };
+    }
+
     const page = parseInt(event.queryStringParameters?.page) || 1;
     const limit = parseInt(event.queryStringParameters?.limit) || 20;
     const skip = (page - 1) * limit;
@@ -44,6 +65,8 @@ exports.handler = async (event) => {
         role: true,
         created_at: true,
         instagramName: true,
+        instagramNames: true,
+        userEmail: true,
       },
       skip,
       take: limit,
@@ -54,7 +77,7 @@ exports.handler = async (event) => {
     
     return {
       statusCode: 200,
-      headers: withCacheControl({ 'Access-Control-Allow-Origin': '*' }, 60, 30),
+      headers: { 'Access-Control-Allow-Origin': '*' },
       body: JSON.stringify({
         users,
         pagination: {

@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { startTimer, withCacheControl } = require('./utils');
+const { startTimer } = require('./utils');
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -55,7 +55,7 @@ exports.handler = async (event) => {
 
     return {
       statusCode: 200,
-      headers: withCacheControl({ 'Access-Control-Allow-Origin': '*' }, 60, 30),
+      headers: { 'Access-Control-Allow-Origin': '*' },
       body: JSON.stringify({
         notifications,
         pagination: {
