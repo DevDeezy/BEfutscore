@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { startTimer, cacheGet, cacheSet, withCacheControl } = require('./utils');
+const { startTimer } = require('./utils');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,13 +34,7 @@ exports.handler = async (event) => {
       const id = parseInt(productTypeId, 10);
       // fetch all types to compute descendants quickly (dataset expected to be small/moderate)
       const tFetchTypes = startTimer();
-      // Cache product types tree for 10 minutes
-      const cacheKey = 'productTypes:all';
-      let allTypes = cacheGet(cacheKey);
-      if (!allTypes) {
-        allTypes = await prisma.productType.findMany();
-        cacheSet(cacheKey, allTypes, 10 * 60 * 1000);
-      }
+      const allTypes = await prisma.productType.findMany();
       fetchTypesMs = tFetchTypes();
       const byParent = new Map();
       for (const t of allTypes) {
@@ -125,13 +119,11 @@ exports.handler = async (event) => {
       totalCount
     });
 
-    // Remove cache for admin requests
-    const isAdmin = (event.headers['x-admin-request'] === 'true');
     const newestId = products.length > 0 ? products[0].id : null;
     const cacheToken = newestId != null ? `${newestId}:${totalCount || 'unk'}` : Date.now();
     return {
       statusCode: 200,
-      headers: isAdmin ? corsHeaders : withCacheControl(corsHeaders, undefined, undefined, cacheToken),
+      headers: corsHeaders,
       body: JSON.stringify({
         products,
         pagination: {
