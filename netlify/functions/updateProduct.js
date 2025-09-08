@@ -45,15 +45,33 @@ exports.handler = async (event) => {
       };
     }
 
-    const { name, description, price, image_url, available_sizes, product_type_id, sexo, ano, numero, cost_price, shirt_type_id } = JSON.parse(event.body || '{}');
+    const body = JSON.parse(event.body || '{}');
 
-    if (!name || !price || !image_url || !available_sizes || !product_type_id) {
-      return { 
-        statusCode: 400, 
-        headers: corsHeaders, 
-        body: JSON.stringify({ error: 'Missing required fields' }) 
-      };
+    // Build a partial update object. Only include fields that are provided.
+    const data = {};
+    if (typeof body.name === 'string') data.name = body.name;
+    if ('description' in body) data.description = body.description ?? null;
+    if (typeof body.price === 'number') data.price = body.price;
+    if (typeof body.cost_price === 'number') data.cost_price = body.cost_price;
+    if (typeof body.image_url === 'string' && body.image_url.length) data.image_url = body.image_url;
+    if (Array.isArray(body.available_sizes)) {
+      data.available_sizes = body.available_sizes;
+    } else if (typeof body.available_sizes === 'string' && body.available_sizes.trim().length) {
+      data.available_sizes = body.available_sizes.split(',').map(s => s.trim()).filter(Boolean);
     }
+    if (body.product_type_id != null && !isNaN(parseInt(body.product_type_id))) {
+      data.productType = { connect: { id: parseInt(body.product_type_id) } };
+    }
+    if ('shirt_type_id' in body) {
+      if (body.shirt_type_id == null || body.shirt_type_id === '') {
+        data.shirt_type_id = null;
+      } else if (!isNaN(parseInt(body.shirt_type_id))) {
+        data.shirt_type_id = parseInt(body.shirt_type_id);
+      }
+    }
+    if (typeof body.sexo === 'string') data.sexo = body.sexo;
+    if (typeof body.ano === 'string') data.ano = body.ano;
+    if ('numero' in body) data.numero = body.numero || null;
 
     // Check if product exists
     const existingProduct = await prisma.product.findUnique({
@@ -71,19 +89,7 @@ exports.handler = async (event) => {
     // Update the product
     const updatedProduct = await prisma.product.update({
       where: { id: parseInt(productId) },
-      data: {
-        name,
-        description,
-        price,
-        cost_price: typeof cost_price === 'number' ? cost_price : null,
-        image_url,
-        available_sizes,
-        productType: { connect: { id: parseInt(product_type_id) } },
-        shirt_type_id: typeof shirt_type_id === 'number' ? shirt_type_id : null,
-        sexo: sexo || 'Neutro',
-        ano: ano || '21/22',
-        numero: numero || null,
-      },
+      data,
       include: {
         productType: true,
       },
