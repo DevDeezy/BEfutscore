@@ -30,8 +30,9 @@ exports.handler = async (event) => {
     
     // If filtering by a type that may have children, collect all descendant ids
     let where = {};
-    if (productTypeId) {
+    if (productTypeId !== undefined && productTypeId !== null && String(productTypeId).trim() !== '') {
       const id = parseInt(productTypeId, 10);
+      if (!isNaN(id)) {
       // fetch all types to compute descendants quickly (dataset expected to be small/moderate)
       const tFetchTypes = startTimer();
       const allTypes = await prisma.productType.findMany();
@@ -54,6 +55,7 @@ exports.handler = async (event) => {
         }
       }
       where = { product_type_id: { in: Array.from(ids) } };
+      }
     }
 
     // Support server-side search
