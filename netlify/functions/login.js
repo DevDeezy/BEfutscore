@@ -70,6 +70,10 @@ exports.handler = async (event) => {
         role: user.role,
         created_at: user.created_at,
         password_reset_required: user.password_reset_required,
+        // include profile fields so client shows correct data immediately
+        userEmail: user.userEmail || null,
+        instagramName: user.instagramName || null,
+        instagramNames: user.instagramNames || null,
         token
       })
     };
