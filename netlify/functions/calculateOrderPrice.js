@@ -19,11 +19,14 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
   const itemCounts = {};
   const extraCharges = {};
   for (const item of orderItems) {
-    const key = item.product_id 
-      ? `product_${item.product_id}_${item.size}` // Unique key for catalog products
-      : item.product_type === 'tshirt'
+    // Treat any item that has a shirt_type_id as a t-shirt of that type,
+    // even if it is a catalog product (product_id present). This allows
+    // packs to apply to store products as well.
+    const key = (item.shirt_type_id != null && item.shirt_type_id !== '')
       ? `tshirt_${item.shirt_type_id}`
-      : `shoes`; // Fallback for old shoe logic if any
+      : (item.product_id
+        ? `product_${item.product_id}_${item.size}` // Unique key for catalog products without shirt type
+        : (item.product_type === 'shoes' ? `shoes` : `other`));
 
     if (!itemCounts[key]) {
       itemCounts[key] = { count: 0, price: item.price || 0 };
@@ -31,9 +34,9 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
     }
     itemCounts[key].count += 1;
     
-    // Add extra charges for t-shirts (both custom and store products with personalization)
-    // For store products (product_id exists), always check for personalization regardless of product_type
-    if (item.product_type === 'tshirt' || item.product_id) {
+    // Add extra charges for t-shirts (custom or catalog) when they have shirt_type_id
+    // For catalog products, we still apply personalization/patch costs if present
+    if ((item.shirt_type_id != null && item.shirt_type_id !== '') || item.product_id) {
       extraCharges[key].patches += Array.isArray(item.patch_images) ? item.patch_images.length : 0;
       // Personalization is charged per item if there's name and/or number
       const hasPersonalization = (item.numero && String(item.numero).trim() !== '') || 
@@ -83,8 +86,11 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
         if (counts[key].count > 0) {
           if (key.startsWith('tshirt_')) {
             const shirtTypeId = parseInt(key.split('_')[1], 10);
-            // Base price
-            let base = counts[key].count * getShirtPrice(shirtTypeId);
+            // Base price: prefer catalog product price if available, otherwise shirt type price
+            const unitPrice = (typeof counts[key].price === 'number' && counts[key].price > 0)
+              ? counts[key].price
+              : getShirtPrice(shirtTypeId);
+            let base = counts[key].count * unitPrice;
             // Add extras
             const extras = extraCharges[key] || { patches: 0, personalization: 0 };
             base += extras.patches * PATCH_PRICE;
