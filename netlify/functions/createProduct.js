@@ -32,7 +32,7 @@ exports.handler = async (event) => {
         image_url,
         available_sizes,
         productType: { connect: { id: Number(product_type_id) } },
-        shirt_type_id: typeof shirt_type_id === 'number' ? shirt_type_id : null,
+        shirtType: shirt_type_id ? { connect: { id: Number(shirt_type_id) } } : undefined,
         sexo: sexo || 'Neutro',
         ano: ano || '21/22',
         numero: numero || null,

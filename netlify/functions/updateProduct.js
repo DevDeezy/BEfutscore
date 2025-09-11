@@ -63,10 +63,11 @@ exports.handler = async (event) => {
       data.productType = { connect: { id: parseInt(body.product_type_id) } };
     }
     if ('shirt_type_id' in body) {
-      if (body.shirt_type_id == null || body.shirt_type_id === '') {
-        data.shirt_type_id = null;
-      } else if (!isNaN(parseInt(body.shirt_type_id))) {
-        data.shirt_type_id = parseInt(body.shirt_type_id);
+      const parsed = parseInt(body.shirt_type_id);
+      if (body.shirt_type_id == null || body.shirt_type_id === '' || isNaN(parsed)) {
+        data.shirtType = { disconnect: true };
+      } else {
+        data.shirtType = { connect: { id: parsed } };
       }
     }
     if (typeof body.sexo === 'string') data.sexo = body.sexo;
