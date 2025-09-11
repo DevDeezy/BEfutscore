@@ -48,93 +48,54 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
     }
   }
 
-  // Use an iterative approach to avoid stack overflow
-  let minPrice = Infinity;
-  const stack = [{ counts: itemCounts, total: 0 }];
+  // New simplified logic: for each shirt type group, if the quantity meets
+  // any pack threshold for that type, price ALL items in the group at the
+  // lowest qualifying pack per-item price. Otherwise, sum their base prices.
+  let totalPrice = 0;
+  for (const key in itemCounts) {
+    const group = itemCounts[key];
+    if (group.count <= 0) continue;
 
-  while (stack.length > 0) {
-    const { counts, total } = stack.pop();
+    if (key.startsWith('tshirt_')) {
+      const shirtTypeId = parseInt(key.split('_')[1], 10);
+      const countForType = group.count;
+      const sumBasePriceForType = group.sumPrice || 0;
 
-    let foundPackToApply = false;
-    for (const pack of packs) {
-      let canApply = true;
-      const newCounts = { ...counts };
-
-      for (const packItem of pack.items) {
-        const key = packItem.product_type === 'tshirt'
-          ? `tshirt_${packItem.shirt_type_id}`
-          : `shoes`;
-        if ((newCounts[key]?.count || 0) < packItem.quantity) {
-          canApply = false;
-          break;
-        }
-        newCounts[key].count -= packItem.quantity;
-      }
-
-      if (canApply) {
-        foundPackToApply = true;
-        stack.push({ counts: newCounts, total: total + pack.price });
-      }
-    }
-
-    if (!foundPackToApply) {
-      // No more packs can be applied, sum remaining items
-      let rest = 0;
-      for (const key in counts) {
-        if (counts[key].count > 0) {
-          if (key.startsWith('tshirt_')) {
-            const shirtTypeId = parseInt(key.split('_')[1], 10);
-            const countForType = counts[key].count;
-            const sumBasePriceForType = counts[key].sumPrice || 0;
-
-            // Find best applicable pack for this shirt type: lowest per-item price among packs
-            let bestUnitPrice = Infinity;
-            for (const pack of packs) {
-              // Only consider packs that are single-type and match this shirtType
-              if (!Array.isArray(pack.items) || pack.items.length !== 1) continue;
-              const packItem = pack.items[0];
-              const packKey = packItem.product_type === 'tshirt' ? `tshirt_${packItem.shirt_type_id}` : null;
-              if (packKey !== key) continue;
-              if ((packItem.quantity || 0) <= countForType) {
-                // Treat pack.price as per-item price
-                if (typeof pack.price === 'number') {
-                  bestUnitPrice = Math.min(bestUnitPrice, pack.price);
-                }
-              }
-            }
-
-            // Base cost: if a qualifying pack exists, all items get that per-item price; otherwise sum of base prices
-            let base = 0;
-            if (bestUnitPrice !== Infinity) {
-              base = countForType * bestUnitPrice;
-            } else {
-              // Fallback: use summed product prices or default shirt type price if missing
-              base = sumBasePriceForType > 0 ? sumBasePriceForType : countForType * getShirtPrice(shirtTypeId);
-            }
-
-            // Add extras
-            const extras = extraCharges[key] || { patches: 0, personalization: 0 };
-            base += extras.patches * PATCH_PRICE;
-            base += extras.personalization * PERSONALIZATION_PRICE;
-            rest += base;
-          } else if (key === 'shoes') { // Old logic fallback
-            rest += counts[key].count * shoePrice;
-          } else if (key.startsWith('product_')) {
-            // Catalog products without a shirt type; sum their prices directly
-            let base = counts[key].sumPrice || 0;
-            // Add extras for catalog products with personalization
-            const extras = extraCharges[key] || { patches: 0, personalization: 0 };
-            base += extras.patches * PATCH_PRICE;
-            base += extras.personalization * PERSONALIZATION_PRICE;
-            rest += base;
-          }
+      // Find lowest per-item price among packs that match this type and threshold
+      let bestUnitPrice = Infinity;
+      for (const pack of packs) {
+        if (!Array.isArray(pack.items) || pack.items.length !== 1) continue;
+        const packItem = pack.items[0];
+        if (packItem.product_type !== 'tshirt') continue;
+        if (parseInt(packItem.shirt_type_id, 10) !== shirtTypeId) continue;
+        if ((packItem.quantity || 0) <= countForType && typeof pack.price === 'number') {
+          bestUnitPrice = Math.min(bestUnitPrice, pack.price);
         }
       }
-      minPrice = Math.min(minPrice, total + rest);
+
+      let base = 0;
+      if (bestUnitPrice !== Infinity) {
+        base = countForType * bestUnitPrice;
+      } else {
+        base = sumBasePriceForType > 0 ? sumBasePriceForType : countForType * getShirtPrice(shirtTypeId);
+      }
+
+      const extras = extraCharges[key] || { patches: 0, personalization: 0 };
+      base += extras.patches * PATCH_PRICE;
+      base += extras.personalization * PERSONALIZATION_PRICE;
+      totalPrice += base;
+    } else if (key === 'shoes') {
+      totalPrice += group.count * shoePrice;
+    } else if (key.startsWith('product_')) {
+      let base = group.sumPrice || 0;
+      const extras = extraCharges[key] || { patches: 0, personalization: 0 };
+      base += extras.patches * PATCH_PRICE;
+      base += extras.personalization * PERSONALIZATION_PRICE;
+      totalPrice += base;
     }
   }
 
-  return minPrice === Infinity ? 0 : minPrice;
+  return totalPrice;
 }
 
 // Default extra charges for t-shirt customizations (fallback values)
