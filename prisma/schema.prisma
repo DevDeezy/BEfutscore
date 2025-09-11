@@ -107,6 +107,7 @@ model ShirtType {
   cost_price Float? @default(0)
   packItems  PackItem[]
   orderItems OrderItem[]
+  products   Product[]
 
   @@map("shirttypes")
 }
