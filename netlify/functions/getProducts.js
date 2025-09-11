@@ -96,6 +96,7 @@ exports.handler = async (event) => {
       available_sizes: true,
       ano: true,
       shirt_type_id: true,
+      shirtType: { select: { id: true, name: true } },
       productType: { select: { id: true, name: true, base_type: true } },
     };
     if (!summary) {
