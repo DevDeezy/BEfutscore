@@ -17,7 +17,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { name, description, price, image_url, available_sizes, product_type_id, sexo, ano, numero, cost_price, shirt_type_id } = JSON.parse(event.body);
+    const { name, description, price, image_url, available_sizes, available_shirt_type_ids, product_type_id, sexo, ano, numero, cost_price, shirt_type_id } = JSON.parse(event.body);
 
     if (!name || !price || !image_url || !available_sizes || !product_type_id) {
       return { statusCode: 400, body: 'Missing required fields' };
@@ -31,6 +31,7 @@ exports.handler = async (event) => {
         cost_price: typeof cost_price === 'number' ? cost_price : null,
         image_url,
         available_sizes,
+        available_shirt_type_ids: Array.isArray(available_shirt_type_ids) ? available_shirt_type_ids.map(Number) : [],
         productType: { connect: { id: Number(product_type_id) } },
         shirtType: shirt_type_id ? { connect: { id: Number(shirt_type_id) } } : undefined,
         sexo: sexo || 'Neutro',

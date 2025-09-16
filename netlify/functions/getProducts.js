@@ -94,6 +94,7 @@ exports.handler = async (event) => {
       description: true,
       price: true,
       available_sizes: true,
+      available_shirt_type_ids: true,
       ano: true,
       shirt_type_id: true,
       shirtType: { select: { id: true, name: true } },

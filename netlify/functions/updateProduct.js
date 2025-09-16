@@ -59,6 +59,9 @@ exports.handler = async (event) => {
     } else if (typeof body.available_sizes === 'string' && body.available_sizes.trim().length) {
       data.available_sizes = body.available_sizes.split(',').map(s => s.trim()).filter(Boolean);
     }
+    if (Array.isArray(body.available_shirt_type_ids)) {
+      data.available_shirt_type_ids = body.available_shirt_type_ids.map((n) => parseInt(n)).filter((n) => !isNaN(n));
+    }
     if (body.product_type_id != null && !isNaN(parseInt(body.product_type_id))) {
       data.productType = { connect: { id: parseInt(body.product_type_id) } };
     }

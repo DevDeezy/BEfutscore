@@ -133,6 +133,8 @@ model Product {
   cost_price      Float? @default(0)
   image_url       String
   available_sizes String[]
+  // List of available ShirtType ids that this product supports
+  available_shirt_type_ids Int[] @default([])
   productType     ProductType @relation(fields: [product_type_id], references: [id])
   product_type_id Int
   // Optional shirt type association for pricing/pack rules
