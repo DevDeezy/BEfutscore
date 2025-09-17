@@ -100,12 +100,8 @@ exports.handler = async (event) => {
       shirtType: { select: { id: true, name: true } },
       productType: { select: { id: true, name: true, base_type: true } },
     };
-    if (!summary) {
-      // Only include image data when not in summary mode (avoid 6MB response limit)
-      // Images can be very large when stored as base64
-      // In summary mode, frontend can fetch single product details if needed
-      selectFields.image_url = true;
-    }
+    // Always include image_url; this is expected to be a lightweight URL string, not base64
+    selectFields.image_url = true;
 
     const products = await prisma.product.findMany({
       where,
