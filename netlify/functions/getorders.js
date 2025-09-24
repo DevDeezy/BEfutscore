@@ -132,14 +132,12 @@ exports.handler = async (event) => {
       // Fetch orders by user ID or all orders with pagination
       whereClause = userId ? { user_id: parseInt(userId, 10) } : {};
       
-      // Get total count only on first page to reduce DB load
+      // Get total count for proper pagination on any page
       let totalCount = null;
-      if (page === 1) {
-        console.log('Getting total count with whereClause:', whereClause);
-        const tCount = startTimer();
-        totalCount = await prisma.order.count({ where: whereClause });
-        console.log('Total count:', totalCount, 'countMs:', tCount());
-      }
+      console.log('Getting total count with whereClause:', whereClause);
+      const tCount = startTimer();
+      totalCount = await prisma.order.count({ where: whereClause });
+      console.log('Total count:', totalCount, 'countMs:', tCount());
       
       console.log('Fetching orders with query options...');
       const tFind = startTimer();
