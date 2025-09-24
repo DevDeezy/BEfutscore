@@ -44,6 +44,7 @@ exports.handler = async (event) => {
       orderBy: {
         name: 'asc',
       },
+      select: { id: true, name: true, image: true, price: true, units: true, active: true },
       skip,
       take: limit,
     });

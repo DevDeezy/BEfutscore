@@ -63,7 +63,7 @@ exports.handler = async (event, context) => {
     }
 
     // Parse request body
-    const { name, image, price } = JSON.parse(event.body);
+    const { name, image, price, units } = JSON.parse(event.body);
 
     // Validate required fields
     if (!name || !image) {
@@ -81,6 +81,7 @@ exports.handler = async (event, context) => {
         name,
         image,
         price: price || 0,
+        units: typeof units === 'number' && units > 0 ? Math.floor(units) : 1,
         updated_at: new Date(),
       },
     });

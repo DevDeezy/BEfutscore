@@ -41,7 +41,7 @@ exports.handler = async (event) => {
       return { statusCode: 403, headers: corsHeaders, body: 'Forbidden' };
     }
 
-    const { name, image, price } = JSON.parse(event.body || '{}');
+    const { name, image, price, units } = JSON.parse(event.body || '{}');
     
     if (!name || !image) {
       return {
@@ -56,6 +56,7 @@ exports.handler = async (event) => {
         name,
         image,
         price: price || 0,
+        units: typeof units === 'number' && units > 0 ? Math.floor(units) : 1,
         active: true,
       },
     });
