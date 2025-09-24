@@ -26,7 +26,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { userId, items, address, paymentMethod, clientInstagram } = JSON.parse(event.body || '{}');
+    const { userId, items, address, paymentMethod, clientInstagram, finalPrice } = JSON.parse(event.body || '{}');
     
     // Extract payment details from address object (sent from Cart component)
     const selectedRecipient = address.selectedRecipient;
@@ -43,11 +43,12 @@ exports.handler = async (event) => {
     // TODO: Replace with dynamic shoe price if needed
     const shoePrice = 50;
 
-    // Calculate price by expanding items with quantity
+    // Calculate price by expanding items with quantity (fallback only)
     const expandedItems = items.flatMap(item => 
       Array(item.quantity || 1).fill(item)
     );
-    const finalPrice = calculateOrderPrice(expandedItems, packs, shirtTypes, shoePrice);
+    const computedPrice = calculateOrderPrice(expandedItems, packs, shirtTypes, shoePrice);
+    const finalPriceToUse = typeof finalPrice === 'number' && isFinite(finalPrice) ? Number(finalPrice) : computedPrice;
 
     // Fetch all products and shirt types for cost lookup
     const allProducts = await prisma.product.findMany();
@@ -86,7 +87,7 @@ exports.handler = async (event) => {
         address_pais: address.pais,
         address_codigo_postal: address.codigoPostal,
         address_telemovel: address.telemovel,
-        total_price: finalPrice,
+        total_price: finalPriceToUse,
         proofReference: proofReference,
         paymentMethod: paymentMethod || null,
         paymentRecipient: selectedRecipient || null,
@@ -126,7 +127,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 201,
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ id: order.id, price: finalPrice }),
+      body: JSON.stringify({ id: order.id, price: finalPriceToUse }),
     };
   } catch (err) {
     console.error('Error in createorder:', err);
