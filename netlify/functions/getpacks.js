@@ -44,6 +44,7 @@ exports.handler = async (event) => {
         id: true,
         name: true,
         price: true,
+        cost_price: true,
         created_at: true,
         items: true,
       },
