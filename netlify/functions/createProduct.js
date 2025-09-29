@@ -46,7 +46,7 @@ exports.handler = async (event) => {
 
     const { name, description, price, image_url, available_sizes, available_shirt_type_ids, product_type_id, sexo, ano, numero, cost_price, shirt_type_id } = body;
 
-    if (!name || typeof price !== 'number' || !image_url || !available_sizes || !product_type_id) {
+    if (!name || typeof price !== 'number' || !image_url || !available_sizes) {
       console.error('createProduct validation failed', {
         namePresent: !!name,
         priceType: typeof price,
@@ -78,7 +78,9 @@ exports.handler = async (event) => {
         image_url,
         available_sizes,
         available_shirt_type_ids: Array.isArray(available_shirt_type_ids) ? available_shirt_type_ids.map(Number) : [],
-        productType: { connect: { id: Number(product_type_id) } },
+        productType: (Number.isFinite(Number(product_type_id)) && Number(product_type_id) > 0)
+          ? { connect: { id: Number(product_type_id) } }
+          : undefined,
         shirtType: shirt_type_id ? { connect: { id: Number(shirt_type_id) } } : undefined,
         sexo: sexo || 'Neutro',
         ano: ano || '21/22',
