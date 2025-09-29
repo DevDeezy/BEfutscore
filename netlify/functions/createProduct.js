@@ -69,6 +69,27 @@ exports.handler = async (event) => {
       ano,
     });
 
+    // Determine required productType relation (fallback to a default when missing)
+    let productTypeRelation;
+    if (Number.isFinite(Number(product_type_id)) && Number(product_type_id) > 0) {
+      productTypeRelation = { connect: { id: Number(product_type_id) } };
+    } else {
+      const requestedBaseType = (body && body.base_type) ? String(body.base_type) : 'tshirt';
+      console.log('createProduct no product_type_id provided, using fallback for base_type', requestedBaseType);
+      let fallbackType = await prisma.productType.findFirst({
+        where: { name: 'Default', base_type: requestedBaseType },
+      });
+      if (!fallbackType) {
+        fallbackType = await prisma.productType.create({
+          data: { name: 'Default', base_type: requestedBaseType, parent_id: null },
+        });
+        console.log('createProduct created fallback productType', { id: fallbackType.id, name: fallbackType.name, base_type: fallbackType.base_type });
+      } else {
+        console.log('createProduct using existing fallback productType', { id: fallbackType.id, name: fallbackType.name, base_type: fallbackType.base_type });
+      }
+      productTypeRelation = { connect: { id: fallbackType.id } };
+    }
+
     const product = await prisma.product.create({
       data: {
         name,
@@ -78,9 +99,7 @@ exports.handler = async (event) => {
         image_url,
         available_sizes,
         available_shirt_type_ids: Array.isArray(available_shirt_type_ids) ? available_shirt_type_ids.map(Number) : [],
-        productType: (Number.isFinite(Number(product_type_id)) && Number(product_type_id) > 0)
-          ? { connect: { id: Number(product_type_id) } }
-          : undefined,
+        productType: productTypeRelation,
         shirtType: shirt_type_id ? { connect: { id: Number(shirt_type_id) } } : undefined,
         sexo: sexo || 'Neutro',
         ano: ano || '21/22',
