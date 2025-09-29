@@ -1,10 +1,15 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+const buildCorsHeaders = (event) => {
+  const origin = event?.headers?.origin || event?.headers?.Origin || '*';
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Credentials': 'true',
+    'Vary': 'Origin',
+  };
 };
 
 exports.handler = async (event) => {
@@ -18,11 +23,11 @@ exports.handler = async (event) => {
     },
   });
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers: corsHeaders, body: '' };
+    return { statusCode: 204, headers: buildCorsHeaders(event), body: '' };
   }
 
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers: corsHeaders, body: 'Method Not Allowed' };
+    return { statusCode: 405, headers: buildCorsHeaders(event), body: 'Method Not Allowed' };
   }
 
   try {
@@ -49,7 +54,7 @@ exports.handler = async (event) => {
         available_sizesPresent: !!available_sizes,
         product_type_idPresent: !!product_type_id,
       });
-      return { statusCode: 400, headers: corsHeaders, body: 'Missing required fields' };
+      return { statusCode: 400, headers: buildCorsHeaders(event), body: 'Missing required fields' };
     }
 
     console.log('createProduct prisma input (summary)', {
@@ -86,7 +91,7 @@ exports.handler = async (event) => {
 
     return {
       statusCode: 201,
-      headers: corsHeaders,
+      headers: buildCorsHeaders(event),
       body: JSON.stringify(product),
     };
   } catch (error) {
@@ -97,7 +102,7 @@ exports.handler = async (event) => {
     });
     return {
       statusCode: 500,
-      headers: corsHeaders,
+      headers: buildCorsHeaders(event),
       body: JSON.stringify({ error: 'Failed to create product' }),
     };
   }
