@@ -23,8 +23,10 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0, patch
   const patchPriceByImage = new Map();
   if (Array.isArray(patches)) {
     for (const p of patches) {
-      if (p && typeof p.image === 'string' && typeof p.price === 'number') {
-        patchPriceByImage.set(p.image, p.price);
+      if (p && typeof p.image === 'string') {
+        // Prefer explicit per-patch price when provided; otherwise fall back to global PATCH_PRICE
+        const price = typeof p.price === 'number' ? p.price : PATCH_PRICE;
+        patchPriceByImage.set(p.image, price);
       }
     }
   }
@@ -52,10 +54,13 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0, patch
         for (const img of item.patch_images) {
           // Custom uploaded patches (data URI) use the global PATCH_PRICE fallback
           if (typeof img === 'string' && img.startsWith('data:')) {
+            // Custom uploaded patches always use global price
             extraCharges[key].patchCost += PATCH_PRICE;
           } else if (typeof img === 'string' && patchPriceByImage.has(img)) {
+            // Predefined patches: use configured price (falls back to global if undefined)
             extraCharges[key].patchCost += patchPriceByImage.get(img);
           } else {
+            // Unknown entry: apply global price
             extraCharges[key].patchCost += PATCH_PRICE;
           }
         }
