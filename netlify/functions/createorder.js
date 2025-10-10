@@ -60,9 +60,8 @@ exports.handler = async (event) => {
     const hasPaymentProof = proofReference && proofReference.trim() !== '' || proofImage;
     
     // Check if this is a custom order (from "Novo Pedido" tab)
-    // This includes: 1) Items without product_id, 2) Admin creating orders, 3) clientInstagram provided
-    const isCustomOrder = items.some(item => !item.product_id) || 
-                         user?.role === 'admin' && clientInstagram;
+    // Only items without product_id are considered custom
+    const isCustomOrder = items.some(item => !item.product_id);
     
     // Set status based on order type and payment proof
     let orderStatus;
@@ -91,7 +90,9 @@ exports.handler = async (event) => {
         proofReference: proofReference,
         paymentMethod: paymentMethod || null,
         paymentRecipient: selectedRecipient || null,
-        paymentAccountInfo: selectedPaymentMethod ? `${selectedPaymentMethod.method} - ${selectedPaymentMethod.accountInfo}` : null,
+        paymentAccountInfo: selectedPaymentMethod
+          ? `${selectedPaymentMethod.name || ''}${selectedPaymentMethod.name ? ' - ' : ''}${selectedPaymentMethod.method} - ${selectedPaymentMethod.accountInfo}`
+          : null,
         proofImage: proofImage,
         clientInstagram: clientInstagram && clientInstagram.trim() !== '' ? clientInstagram.trim() : null,
         items: {

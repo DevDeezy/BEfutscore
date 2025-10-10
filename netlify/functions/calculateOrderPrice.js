@@ -2,13 +2,14 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 /**
- * @param {Array} orderItems - [{ product_type, shirt_type_id, ... }]
- * @param {Array} packs - [{ id, items: [{ product_type, quantity, shirt_type_id }], price }]
- * @param {Array} shirtTypes - [{ id, price }]
- * @param {number} shoePrice - price for shoes
- * @returns {number} - best price for the order
- */
-function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
+* @param {Array} orderItems - [{ product_type, shirt_type_id, patch_images, ... }]
+* @param {Array} packs - [{ id, items: [{ product_type, quantity, shirt_type_id }], price }]
+* @param {Array} shirtTypes - [{ id, price }]
+* @param {number} shoePrice - price for shoes
+* @param {Array} patches - [{ image, price }]
+* @returns {number} - best price for the order
+*/
+function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0, patches = []) {
   // Helper: get price for a shirt type
   const getShirtPrice = (shirt_type_id) => {
     const type = shirtTypes.find(t => t.id === shirt_type_id);
@@ -18,6 +19,15 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
   // Helper: count items by type and shirt_type_id
   const itemCounts = {};
   const extraCharges = {};
+  // Build quick lookup for predefined patch prices by image URL
+  const patchPriceByImage = new Map();
+  if (Array.isArray(patches)) {
+    for (const p of patches) {
+      if (p && typeof p.image === 'string' && typeof p.price === 'number') {
+        patchPriceByImage.set(p.image, p.price);
+      }
+    }
+  }
   for (const item of orderItems) {
     // Treat any item that has a shirt_type_id as a t-shirt of that type,
     // even if it is a catalog product (product_id present). This allows
@@ -30,7 +40,7 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
 
     if (!itemCounts[key]) {
       itemCounts[key] = { count: 0, sumPrice: 0 };
-      extraCharges[key] = { patches: 0, personalization: 0 };
+      extraCharges[key] = { patchCost: 0, personalization: 0 };
     }
     itemCounts[key].count += 1;
     itemCounts[key].sumPrice += typeof item.price === 'number' ? item.price : 0;
@@ -38,7 +48,18 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
     // Add extra charges for t-shirts (custom or catalog) when they have shirt_type_id
     // For catalog products, we still apply personalization/patch costs if present
     if ((item.shirt_type_id != null && item.shirt_type_id !== '') || item.product_id) {
-      extraCharges[key].patches += Array.isArray(item.patch_images) ? item.patch_images.length : 0;
+      if (Array.isArray(item.patch_images)) {
+        for (const img of item.patch_images) {
+          // Custom uploaded patches (data URI) use the global PATCH_PRICE fallback
+          if (typeof img === 'string' && img.startsWith('data:')) {
+            extraCharges[key].patchCost += PATCH_PRICE;
+          } else if (typeof img === 'string' && patchPriceByImage.has(img)) {
+            extraCharges[key].patchCost += patchPriceByImage.get(img);
+          } else {
+            extraCharges[key].patchCost += PATCH_PRICE;
+          }
+        }
+      }
       // Personalization is charged per item if there's name and/or number
       const hasPersonalization = (item.numero && String(item.numero).trim() !== '') || 
                                  (item.player_name && String(item.player_name).trim() !== '');
@@ -80,16 +101,16 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0) {
         base = sumBasePriceForType > 0 ? sumBasePriceForType : countForType * getShirtPrice(shirtTypeId);
       }
 
-      const extras = extraCharges[key] || { patches: 0, personalization: 0 };
-      base += extras.patches * PATCH_PRICE;
+      const extras = extraCharges[key] || { patchCost: 0, personalization: 0 };
+      base += extras.patchCost;
       base += extras.personalization * PERSONALIZATION_PRICE;
       totalPrice += base;
     } else if (key === 'shoes') {
       totalPrice += group.count * shoePrice;
     } else if (key.startsWith('product_')) {
       let base = group.sumPrice || 0;
-      const extras = extraCharges[key] || { patches: 0, personalization: 0 };
-      base += extras.patches * PATCH_PRICE;
+      const extras = extraCharges[key] || { patchCost: 0, personalization: 0 };
+      base += extras.patchCost;
       base += extras.personalization * PERSONALIZATION_PRICE;
       totalPrice += base;
     }
@@ -156,6 +177,7 @@ exports.handler = async (event) => {
     const { items } = JSON.parse(event.body || '{}');
     const packs = await prisma.pack.findMany({ include: { items: true } });
     const shirtTypes = await prisma.shirtType.findMany();
+    const patches = await prisma.patch.findMany({ select: { image: true, price: true } });
     
     // Expand items from the cart, as calculateOrderPrice expects a flat list
     const expandedItems = items.flatMap(item => 
@@ -163,7 +185,7 @@ exports.handler = async (event) => {
     );
 
     const shoePrice = 0; // Deprecated, price now comes from item itself
-    const price = calculateOrderPrice(expandedItems, packs, shirtTypes, shoePrice);
+    const price = calculateOrderPrice(expandedItems, packs, shirtTypes, shoePrice, patches);
     return { statusCode: 200, headers: corsHeaders, body: JSON.stringify({ price }) };
   } catch (error) {
     console.error('Error in calculateOrderPrice:', error);
