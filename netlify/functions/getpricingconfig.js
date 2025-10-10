@@ -24,9 +24,11 @@ exports.handler = async (event) => {
   }
 
   try {
-    const configs = await prisma.pricingConfig.findMany({
+    let configs = await prisma.pricingConfig.findMany({
       orderBy: { name: 'asc' }
     });
+    // Remove global patch price from response; patch pricing is now per-item only
+    configs = configs.filter(c => c.key !== 'patch_price');
 
     return {
       statusCode: 200,

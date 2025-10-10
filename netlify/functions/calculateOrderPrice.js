@@ -24,8 +24,8 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0, patch
   if (Array.isArray(patches)) {
     for (const p of patches) {
       if (p && typeof p.image === 'string') {
-        // Prefer explicit per-patch price when provided; otherwise fall back to global PATCH_PRICE
-        const price = typeof p.price === 'number' ? p.price : PATCH_PRICE;
+        // Use per-patch price only; if missing, treat as 0
+        const price = typeof p.price === 'number' ? p.price : 0;
         patchPriceByImage.set(p.image, price);
       }
     }
@@ -53,15 +53,12 @@ function calculateOrderPrice(orderItems, packs, shirtTypes, shoePrice = 0, patch
       if (Array.isArray(item.patch_images)) {
         for (const img of item.patch_images) {
           // Custom uploaded patches (data URI) use the global PATCH_PRICE fallback
-          if (typeof img === 'string' && img.startsWith('data:')) {
-            // Custom uploaded patches always use global price
-            extraCharges[key].patchCost += PATCH_PRICE;
-          } else if (typeof img === 'string' && patchPriceByImage.has(img)) {
-            // Predefined patches: use configured price (falls back to global if undefined)
+          if (typeof img === 'string' && patchPriceByImage.has(img)) {
+            // Predefined patches: use configured price per patch
             extraCharges[key].patchCost += patchPriceByImage.get(img);
           } else {
-            // Unknown entry: apply global price
-            extraCharges[key].patchCost += PATCH_PRICE;
+            // Custom or unknown patches now cost 0 by default
+            extraCharges[key].patchCost += 0;
           }
         }
       }
