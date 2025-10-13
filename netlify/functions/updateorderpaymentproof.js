@@ -24,7 +24,7 @@ exports.handler = async (event) => {
 
   try {
     const orderId = event.path.split('/').pop();
-    const { proofReference, proofImage, paymentMethod } = JSON.parse(event.body || '{}');
+    const { proofReference, proofImage, paymentMethod, paymentRecipient } = JSON.parse(event.body || '{}');
     
     if (!orderId) {
       return {
@@ -63,6 +63,7 @@ exports.handler = async (event) => {
         proofReference: proofReference || null,
         proofImage: proofImage || null,
         paymentMethod: paymentMethod || null,
+        paymentRecipient: paymentRecipient || null,
       },
       include: { items: true, user: true },
     });
