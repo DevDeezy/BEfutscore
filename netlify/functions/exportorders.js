@@ -259,10 +259,10 @@ exports.handler = async (event) => {
 
     const buffer = await workbook.xlsx.writeBuffer();
 
-    // Update status of exported orders to 'Em Processamento'
+    // Update status of exported orders to 'em_processamento'
     await prisma.order.updateMany({
       where: { id: { in: orderIds } },
-      data: { status: 'Em Processamento' },
+      data: { status: 'em_processamento' },
     });
 
     return {

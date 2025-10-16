@@ -67,10 +67,10 @@ exports.handler = async (event) => {
     let orderStatus;
     if (isCustomOrder) {
       // Custom orders from "Novo Pedido" go to "A Orçamentar" status
-      orderStatus = 'A Orçamentar';
+      orderStatus = 'a_orcamentar';
     } else {
       // Regular store orders follow the normal payment proof logic
-      orderStatus = hasPaymentProof ? 'pending' : 'Para analizar';
+      orderStatus = hasPaymentProof ? 'pending' : 'para_analizar';
     }
 
     // Note: clientInstagram will be saved directly in the order, not in user profile

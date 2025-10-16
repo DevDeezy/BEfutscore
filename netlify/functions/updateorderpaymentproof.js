@@ -34,7 +34,7 @@ exports.handler = async (event) => {
       };
     }
 
-    // Check if order exists and is in "Em pagamento" status
+    // Check if order exists and is in "em_pagamento" status
     const existingOrder = await prisma.order.findUnique({
       where: { id: Number(orderId) }
     });
@@ -47,12 +47,12 @@ exports.handler = async (event) => {
       };
     }
 
-    // Allow updating payment proof for orders in "Em pagamento" or "pending" status
-    if (existingOrder.status !== 'Em pagamento' && existingOrder.status !== 'pending') {
+    // Allow updating payment proof for orders in "em_pagamento" or "pending" status
+    if (existingOrder.status !== 'em_pagamento' && existingOrder.status !== 'pending') {
       return {
         statusCode: 400,
         headers: { 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({ error: 'Can only update payment proof for orders in "Em pagamento" or "pending" status' }),
+        body: JSON.stringify({ error: 'Can only update payment proof for orders in "em_pagamento" or "pending" status' }),
       };
     }
 

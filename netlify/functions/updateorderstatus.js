@@ -47,8 +47,8 @@ exports.handler = async (event) => {
       include: { items: true, user: true, orderState: true },
     });
 
-        // Create notification if status is changed to "Em pagamento"
-    if (status === 'em_pagamento' || status === 'Em pagamento') {
+        // Create notification if status is changed to "em_pagamento"
+    if (status === 'em_pagamento') {
       await prisma.notification.create({
         data: {
           userId: order.user_id,

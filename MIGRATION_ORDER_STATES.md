@@ -67,18 +67,13 @@ Atualiza um estado de encomenda existente (apenas nome, cor e descrição).
 - `PreviousOrders.tsx` - Usa estados dinâmicos
 - `types/index.ts` - Novo tipo `OrderState`
 
-### 5. Cores Disponíveis
-O sistema suporta as seguintes cores predefinidas:
-- `orange` (#ff9800)
-- `purple` (#9c27b0)
-- `darkblue` (#1565c0)
-- `red` (#f44336)
-- `blue` (#2196f3)
-- `green` (#4caf50)
-- `brown` (#795548)
-- `gray` (#757575)
+### 5. Cores Personalizáveis
+O sistema utiliza um **color picker** que permite:
+- Selecionar qualquer cor através de uma paleta visual
+- Inserir códigos hexadecimais diretamente (ex: #ff0000)
+- Pré-visualizar a cor selecionada em tempo real
 
-Também é possível usar códigos hexadecimais personalizados.
+As cores são armazenadas como códigos hexadecimais na base de dados.
 
 ## Instruções de Instalação
 
@@ -132,8 +127,12 @@ npm install
 ### Painel de Administração
 1. Aceda ao painel de admin
 2. Clique na tab "Estados das Encomendas"
-3. Edite o nome, cor ou descrição de qualquer estado
-4. As alterações refletem-se imediatamente em toda a plataforma
+3. Clique em "Editar" para qualquer estado
+4. **Cor**: Use o color picker para selecionar qualquer cor ou insira um código hexadecimal
+5. **Nome**: Altere o nome do estado
+6. **Descrição**: Edite a descrição da regra de negócio
+7. Veja a pré-visualização em tempo real
+8. As alterações refletem-se imediatamente em toda a plataforma
 
 ### Regras de Negócio Mantidas
 - **Notificações**: Encomendas com estado `em_pagamento` continuam a gerar notificações automáticas
