@@ -44,11 +44,11 @@ exports.handler = async (event) => {
     const order = await prisma.order.update({
       where: { id: Number(orderId) },
       data: { status },
-      include: { items: true, user: true },
+      include: { items: true, user: true, orderState: true },
     });
 
         // Create notification if status is changed to "Em pagamento"
-    if (status === 'Em pagamento') {
+    if (status === 'em_pagamento' || status === 'Em pagamento') {
       await prisma.notification.create({
         data: {
           userId: order.user_id,

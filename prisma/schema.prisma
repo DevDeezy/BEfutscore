@@ -30,6 +30,7 @@ model Order {
   user            User        @relation(fields: [user_id], references: [id])
   user_id          Int
   status          String      @default("pending")
+  orderState      OrderState? @relation(fields: [status], references: [key])
   address_nome    String
   address_morada  String
   address_cidade  String
@@ -213,4 +214,17 @@ model Patch {
   updated_at DateTime @updatedAt
 
   @@map("patches")
+}
+
+model OrderState {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  name        String
+  color       String
+  description String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  orders      Order[]
+
+  @@map("order_states")
 }

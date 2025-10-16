@@ -48,6 +48,7 @@ exports.handler = async (event) => {
             instagramName: true,
           },
         },
+        orderState: true,
       },
       orderBy: { created_at: 'desc' }
     };
@@ -100,6 +101,7 @@ exports.handler = async (event) => {
               instagramName: true,
             },
           },
+          orderState: true,
         },
         orderBy: { created_at: 'desc' }
       };
