@@ -241,7 +241,9 @@ exports.handler = async (event) => {
         }
       }
       
-      worksheet.getCell(rowIndex, priceCol + 3).value = totalCost || order.total_price;
+      // Move computed total to "Total Futscore" value column and leave "Total Apple" blank
+      worksheet.getCell(rowIndex, priceCol + 1).value = totalCost || order.total_price;
+      worksheet.getCell(rowIndex, priceCol + 3).value = '';
       worksheet.getColumn(priceCol + 2).width = 15;
       worksheet.getColumn(priceCol + 3).width = 10;
 

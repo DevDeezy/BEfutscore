@@ -57,14 +57,7 @@ exports.handler = async (event) => {
       };
     }
 
-    // Allow updates for both "para_analizar" and "a_orcamentar" statuses
-    if (existingOrder.status !== 'para_analizar' && existingOrder.status !== 'a_orcamentar') {
-      return {
-        statusCode: 400,
-        headers: { 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({ error: 'Can only update price for orders in "para_analizar" or "a_orcamentar" status' }),
-      };
-    }
+    // Admins may update the order price regardless of current status
 
     // Update order price
     const order = await prisma.order.update({

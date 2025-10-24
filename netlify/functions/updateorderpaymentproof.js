@@ -47,14 +47,7 @@ exports.handler = async (event) => {
       };
     }
 
-    // Allow updating payment proof for orders in "em_pagamento" or "pending" status
-    if (existingOrder.status !== 'em_pagamento' && existingOrder.status !== 'pending') {
-      return {
-        statusCode: 400,
-        headers: { 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({ error: 'Can only update payment proof for orders in "em_pagamento" or "pending" status' }),
-      };
-    }
+    // Allow updating payment proof regardless of current status
 
     // Update order with payment proof
     const order = await prisma.order.update({
