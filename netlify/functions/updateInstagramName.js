@@ -31,7 +31,8 @@ exports.handler = async (event) => {
       return { statusCode: 401, headers: corsHeaders, body: 'Unauthorized' };
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded.id;
+    const pathUserId = event.path && event.path.split('/').pop();
+    const targetUserId = pathUserId && !isNaN(parseInt(pathUserId, 10)) ? parseInt(pathUserId, 10) : decoded.id;
     const { instagramName, instagramNames } = JSON.parse(event.body || '{}');
     
     // Handle both single instagramName (backward compatibility) and multiple instagramNames
@@ -43,7 +44,7 @@ exports.handler = async (event) => {
     }
     
     const updatedUser = await prisma.user.update({
-      where: { id: userId },
+      where: { id: targetUserId },
       data: updateData,
       select: { id: true, email: true, instagramName: true, instagramNames: true },
     });
