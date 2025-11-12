@@ -94,25 +94,26 @@ exports.handler = async (event) => {
           
           const description = descriptionParts.join('\n');
           
-          // Put description in the column before the image
-          const descriptionCell = worksheet.getCell(rowIndex, colIndex);
-          descriptionCell.value = description;
-          descriptionCell.alignment = { wrapText: true, vertical: 'top' };
-          worksheet.getColumn(colIndex).width = 20;
-          colIndex++;
-
+          // First, place the main image
           if (imageBuffer) {
             const imageId = workbook.addImage({
               buffer: imageBuffer,
               extension: imageExtension,
             });
             worksheet.addImage(imageId, {
+              // Anchor to the current column (0-based)
               tl: { col: colIndex - 1, row: rowIndex - 1 },
               ext: { width: 100, height: 75 }
             });
+            worksheet.getColumn(colIndex).width = 15;
+            colIndex++;
           }
           
-          worksheet.getColumn(colIndex).width = 15;
+          // Then, put the description/details next to the image
+          const descriptionCell = worksheet.getCell(rowIndex, colIndex);
+          descriptionCell.value = description;
+          descriptionCell.alignment = { wrapText: true, vertical: 'top' };
+          worksheet.getColumn(colIndex).width = 20;
           colIndex++;
 
           // Add patch images if they exist
@@ -157,6 +158,7 @@ exports.handler = async (event) => {
                   tl: { col: colIndex - 1, row: rowIndex - 1 },
                   ext: { width: 50, height: 40 } // Smaller size for patch images
                 });
+                worksheet.getColumn(colIndex).width = 12;
                 colIndex++;
               }
             }
