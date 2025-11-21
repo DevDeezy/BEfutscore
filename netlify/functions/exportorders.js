@@ -91,8 +91,8 @@ exports.handler = async (event) => {
           if (item.player_name && String(item.player_name).trim() !== '') descriptionParts.push(`Nome: ${item.player_name}`);
           if (item.numero && String(item.numero).trim() !== '') descriptionParts.push(`Número: ${item.numero}`);
           if (item.quantity && item.quantity > 1) descriptionParts.push(`Quantidade: ${item.quantity}`);
-          if (typeof item.anuncios !== 'undefined' && item.anuncios !== null) {
-            descriptionParts.push(`Anúncios: ${item.anuncios ? 'Com' : 'Sem'}`);
+          if (item.anuncios === true) {
+            descriptionParts.push(`With ads`);
           }
           
           const description = descriptionParts.join('\n');
