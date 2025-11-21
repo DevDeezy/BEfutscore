@@ -219,7 +219,9 @@ model Patch {
 model OrderState {
   id          Int      @id @default(autoincrement())
   key         String   @unique
-  name        String
+  name        String   // Mantido para compatibilidade (usado como fallback ou admin por padrão)
+  name_user   String?  // Nome do estado para utilizadores
+  name_admin  String?  // Nome do estado para administradores
   color       String
   description String?
   created_at  DateTime @default(now())

@@ -25,25 +25,32 @@ exports.handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body || '{}');
-    const { id, name, color, description } = body;
+    const { id, name, name_user, name_admin, color, description } = body;
 
-    if (!id || !name || !color) {
+    if (!id || !color) {
       return {
         statusCode: 400,
         headers: { 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({ error: 'id, name and color are required' }),
+        body: JSON.stringify({ error: 'id and color are required' }),
       };
     }
+
+    // Build update data object
+    const updateData = {
+      color,
+      description,
+      updated_at: new Date()
+    };
+
+    // Add name fields if provided
+    if (name !== undefined) updateData.name = name;
+    if (name_user !== undefined) updateData.name_user = name_user;
+    if (name_admin !== undefined) updateData.name_admin = name_admin;
 
     // Update order state
     const orderState = await prisma.orderState.update({
       where: { id: parseInt(id) },
-      data: {
-        name,
-        color,
-        description,
-        updated_at: new Date()
-      }
+      data: updateData
     });
 
     return {
