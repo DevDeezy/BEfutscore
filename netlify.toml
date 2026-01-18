@@ -3,4 +3,8 @@
   command = "npm run prisma:generate"
 
 [functions]
-  node_bundler = "esbuild" 
+  node_bundler = "esbuild"
+
+# Environment Variables Required:
+# - DATABASE_URL: PostgreSQL connection string
+# - RESEND_API_KEY: Your Resend API key for sending emails 

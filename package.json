@@ -10,7 +10,8 @@
         "exceljs": "^4.4.0",
         "file-saver": "^2.0.5",
         "jsonwebtoken": "^9.0.0",
-        "prisma": "^5.0.0"
+        "prisma": "^5.0.0",
+        "resend": "^4.0.0"
     },
     "scripts": {
         "build": "npm install && prisma generate",
