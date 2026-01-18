@@ -83,7 +83,7 @@ exports.handler = async (event) => {
 
     // Send email using Resend
     const { data, error } = await resend.emails.send({
-      from: 'Futscore <onboarding@resend.dev>',
+      from: 'Futscore <noreply@futscore.pt>',
       to: [to],
       subject: emailSubject,
       html: emailHtml,

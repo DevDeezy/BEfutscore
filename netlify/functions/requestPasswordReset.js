@@ -95,7 +95,7 @@ exports.handler = async (event) => {
 
     // Send email with the code
     const { error: emailError } = await resend.emails.send({
-      from: 'Futscore <onboarding@resend.dev>',
+      from: 'Futscore <noreply@futscore.pt>',
       to: [recipientEmail],
       subject: 'Código de Recuperação de Palavra-passe - Futscore',
       html: `
