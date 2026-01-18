@@ -20,7 +20,7 @@ model User {
   notifications Notification[]
   instagramName String? // Instagram name, optional (for backward compatibility)
   instagramNames String? // Multiple Instagram names as JSON string
-  userEmail String? // User email for notifications, optional
+  userEmail String @unique // User email for notifications, required and unique
   resetCode String? // 6-digit code for password reset
   resetCodeExpiry DateTime? // Expiry time for the reset code
   

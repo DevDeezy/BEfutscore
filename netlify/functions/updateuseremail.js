@@ -34,6 +34,16 @@ exports.handler = async (event) => {
       };
     }
 
+    // Check if userEmail is already in use by another user
+    const existingUserWithEmail = await prisma.user.findUnique({ where: { userEmail } });
+    if (existingUserWithEmail && existingUserWithEmail.id !== Number(userId)) {
+      return {
+        statusCode: 409,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ error: 'User email is already in use' }),
+      };
+    }
+
     const user = await prisma.user.update({
       where: { id: Number(userId) },
       data: { userEmail },

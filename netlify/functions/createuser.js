@@ -37,13 +37,32 @@ exports.handler = async (event) => {
       };
     }
 
-    // Check if user already exists
+    // Validate userEmail is provided
+    if (!data.userEmail) {
+      return {
+        statusCode: 400,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ error: 'User email is required.' }),
+      };
+    }
+
+    // Check if user already exists by login email
     const existing = await prisma.user.findUnique({ where: { email: data.email } });
     if (existing) {
       return {
         statusCode: 409,
         headers: { 'Access-Control-Allow-Origin': '*' },
         body: JSON.stringify({ error: 'User already exists.' }),
+      };
+    }
+
+    // Check if userEmail is already in use
+    const existingUserEmail = await prisma.user.findUnique({ where: { userEmail: data.userEmail } });
+    if (existingUserEmail) {
+      return {
+        statusCode: 409,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ error: 'User email is already in use.' }),
       };
     }
 
@@ -54,6 +73,7 @@ exports.handler = async (event) => {
         password: hashedPassword,
         role: data.role || 'user',
         instagramName: data.instagramName || null,
+        userEmail: data.userEmail,
       },
       select: {
         id: true,
@@ -61,6 +81,7 @@ exports.handler = async (event) => {
         role: true,
         created_at: true,
         instagramName: true,
+        userEmail: true,
       }
     });
     return {
