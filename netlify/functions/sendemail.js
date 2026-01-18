@@ -2,7 +2,7 @@ const { Resend } = require('resend');
 
 // Initialize Resend with API key
 // Note: In production, use environment variable: process.env.RESEND_API_KEY
-const resend = new Resend(process.env.RESEND_API_KEY || 're_A6Ac8C55_C6rK5kfvrhZ3haVcXJTwEPyq');
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {

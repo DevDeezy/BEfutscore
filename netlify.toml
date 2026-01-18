@@ -1,6 +1,5 @@
 [build]
   functions = "netlify/functions"
-  command = "echo 'Build complete'"
 
 [functions]
   node_bundler = "esbuild"

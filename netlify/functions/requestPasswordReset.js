@@ -2,7 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const { Resend } = require('resend');
 
 const prisma = new PrismaClient();
-const resend = new Resend(process.env.RESEND_API_KEY || 're_A6Ac8C55_C6rK5kfvrhZ3haVcXJTwEPyq');
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Generate a 6-digit random code
 function generateCode() {
