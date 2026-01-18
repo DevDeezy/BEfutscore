@@ -1,5 +1,7 @@
 [build]
+  command = "npm install && npm run prisma:generate"
   functions = "netlify/functions"
+  publish = "."
 
 [functions]
   node_bundler = "esbuild"
