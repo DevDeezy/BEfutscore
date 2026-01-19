@@ -37,14 +37,8 @@ exports.handler = async (event) => {
       };
     }
 
-    // Validate userEmail is provided
-    if (!data.userEmail) {
-      return {
-        statusCode: 400,
-        headers: { 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({ error: 'User email is required.' }),
-      };
-    }
+    // Use email as userEmail if userEmail is not provided
+    const userEmail = data.userEmail || data.email;
 
     // Check if user already exists by login email
     const existing = await prisma.user.findUnique({ where: { email: data.email } });
@@ -57,7 +51,7 @@ exports.handler = async (event) => {
     }
 
     // Check if userEmail is already in use
-    const existingUserEmail = await prisma.user.findUnique({ where: { userEmail: data.userEmail } });
+    const existingUserEmail = await prisma.user.findUnique({ where: { userEmail: userEmail } });
     if (existingUserEmail) {
       return {
         statusCode: 409,
@@ -73,7 +67,7 @@ exports.handler = async (event) => {
         password: hashedPassword,
         role: data.role || 'user',
         instagramName: data.instagramName || null,
-        userEmail: data.userEmail,
+        userEmail: userEmail,
       },
       select: {
         id: true,
